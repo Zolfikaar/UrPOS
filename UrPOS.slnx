@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="UrPOS.Core/UrPOS.Core.csproj" />
+  <Project Path="UrPOS.Infrastructure/UrPOS.Infrastructure.csproj" />
+  <Project Path="UrPOS.WinForms/UrPOS.WinForms.csproj" />
+</Solution>
