@@ -1,27 +1,33 @@
-# UrPOS - Core System (The Architectural Backbone of Madar)
+# 🚀 UrPOS - Core Engine & Infrastructure
 
-UrPOS is the robust, high-performance shared core codebase designed to power various retail and specialized business management sectors (such as Supermarkets, Pharmacies, and General Markets) under the commercial product line brand **Madar**.
+A unified Point of Sale (POS) and Inventory Management System core engine, engineered with Clean Architecture principles for high performance on local, lightweight machines.
 
-## 🚀 Engineering Philosophy
-- **Robust Backend:** Absolute focus on backend stability, database integrity, and atomic transactional operations.
-- **High Performance:** Heavily optimized architecture built to run seamlessly on low-spec client machines with minimal CPU and RAM footprints.
-- **Clean Architecture:** Strict separation of concerns ensuring that the core system remains decoupleable, highly testable, and completely ready for future Cloud/API synchronization without breaking foundational logic.
-- **Database Stability:** Leverages localized PostgreSQL configurations for superior concurrency management and schema-less flexibility using `JSONB` fields for dynamic module extensions.
+## 🏗️ Architectural Overview (Clean Architecture)
 
-## 🛠️ Technology Stack
-- **Language:** C# (.NET 10.0 LTS)
-- **UI Framework:** Windows Forms (WinForms)
-- **Data Access:** Dapper (Micro-ORM) & Npgsql
-- **Database Engine:** PostgreSQL
+The project is strictly decoupled into independent layers to ensure high maintainability, testability, and extensibility:
 
-## 📂 Solution Architecture
-The solution follows a streamlined Clean Architecture structure:
-- `1.Core (UrPOS.Core)`: Contains domain entities, repository contracts (interfaces), and fundamental business rules. Zero external dependencies.
-- `2.Infrastructure (UrPOS.Infrastructure)`: Handles database connectivity, persistence operations, transaction management, and optimized raw SQL execution via Dapper.
-- `3.Presentation (UrPOS.WinForms)`: Lightweight user interface layer, managing dependency injection container composition, and application startup lifecycles.
+* **UrPOS.Core:** Contains Domain Entities, Interfaces, Stateful Session tracking (`UserSession`), and Service response abstractions (`ServiceResult`).
+* **UrPOS.Infrastructure:** 
+  * Micro-ORM Data Access powered by **Dapper** & **PostgreSQL**.
+  * Security & Cryptography using **BCrypt.Net-Next**.
+  * Local configuration storage with JSON (`JsonConfigurationService`).
+  * Embedded Schema Auto-Initialization & Migrations (`DbInitializer`).
+* **UrPOS.WinForms (Presentation):** UI layer powered by **Microsoft.Extensions.Hosting** for Dependency Injection.
+* **UrPOS.Tests:** Automated unit test suite leveraging **xUnit** and **Moq** for domain validation rules.
 
-## 🗄️ Core Progress
-- [x] Initial relational database schema design.
-- [x] Repository Pattern infrastructure setup for Products.
-- [x] High-performance, case-insensitive partial product searching (`SearchByNameAsync`).
-- [x] Atomic transactional pipeline setup for Users, Roles, and Permissions tracking.
+## ⚡ Core Features & Highlights
+
+- **Unified Invoice Engine:** Polymorphic inheritance for `SalesInvoice` and `PurchaseInvoice`, persisting lines and inventory movements atomically in single Transactions.
+- **Supplier & Inventory Ledger:** Automated stock movement logging and real-time supplier balance updates.
+- **Stateful Thread-Safe Security:** Password hashing via BCrypt and active cashier tracking using in-memory `UserSession` (Thread-Safe Singleton).
+- **Zero-Setup Database Deployment:** Auto-creates PostgreSQL database, initial schema, indexes, and seeded credentials (`admin` / `admin123`) on first boot.
+- **Robust Application Services:** Business-level validation layer protecting against inventory depletion and negative-margin sales.
+
+## 🛠️ Tech Stack & Dependencies
+
+- **Framework:** .NET 10.0 (C#)
+- **Data Access:** Dapper (Micro-ORM), Npgsql
+- **Security:** BCrypt.Net-Next
+- **Dependency Injection:** Microsoft.Extensions.Hosting
+- **Testing Suite:** xUnit, Moq
+- **Configuration:** System.Text.Json

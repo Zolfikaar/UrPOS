@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="UrPOS.Core/UrPOS.Core.csproj" />
   <Project Path="UrPOS.Infrastructure/UrPOS.Infrastructure.csproj" />
+  <Project Path="UrPOS.Tests/UrPOS.Tests.csproj" Id="5a30bccf-762c-4e72-aeed-6b139ce3203c" />
   <Project Path="UrPOS.WinForms/UrPOS.WinForms.csproj" />
 </Solution>
