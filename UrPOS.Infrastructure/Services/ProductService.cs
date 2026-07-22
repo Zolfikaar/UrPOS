@@ -34,6 +34,17 @@ namespace UrPOS.Infrastructure.Services
             return success ? ServiceResult<int>.Success(product.Id) : ServiceResult<int>.Failure("فشل في إنشاء المنتج.");
         }
 
+        public async Task<ServiceResult> UpdateProductAsync(Product product)
+        {
+            if(product.SalePrice < product.CostPrice)
+            {
+                return ServiceResult.Failure("خطأ تجاري: سعر البيع لا يمكن أن يكون أقل من سعر الكلفة.");
+            }
+
+            var success = await _productRepository.UpdateAsync(product);
+            return success ? ServiceResult.Success() : ServiceResult.Failure("فشل تحديث بيانات المنتج، ربما تم حذفه.");
+        }
+
         public async Task<IEnumerable<Product>> GetLowStockProductsAsync()
         {
             var allProducts = await _productRepository.GetAllAsync();
