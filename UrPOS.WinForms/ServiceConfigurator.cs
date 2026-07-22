@@ -6,6 +6,7 @@ using UrPOS.Infrastructure.Data;
 using UrPOS.Infrastructure.Repositories;
 using UrPOS.Infrastructure.Security;
 using UrPOS.Infrastructure.Services;
+using UrPOS.WinForms.Forms;
 
 namespace UrPOS.Presentation
 {
@@ -19,6 +20,7 @@ namespace UrPOS.Presentation
                     // 1. تسجيل كائن الإعدادات والاتصال كـ Singleton (نسخة واحدة بالذاكرة)
                     services.AddSingleton<IConfigurationService, JsonConfigurationService>();
                     services.AddSingleton(sp => sp.GetRequiredService<IConfigurationService>().GetConfigurations());
+                    services.AddSingleton<DbConnectionFactory>();
 
                     // 2. تسجيل الأدوات الأمنية والتهيئة
                     services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
@@ -35,6 +37,11 @@ namespace UrPOS.Presentation
                     services.AddTransient<IAuthService, AuthService>();
                     services.AddTransient<IProductService, ProductService>();
                     services.AddTransient<IInvoiceService, InvoiceService>();
+
+                    // 5. تسجيل نماذج العرض (WinForms)
+                    services.AddTransient<LoginForm>();
+                    services.AddTransient<MainForm>();
+                    services.AddTransient<PosSalesForm>();
                 });
         }
     }

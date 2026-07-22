@@ -23,7 +23,7 @@ namespace UrPOS.Core.Entities
             {
                 lock (_lock)
                 {
-                    return _instance ?? new UserSession();
+                    return _instance ??= new UserSession();
                 }
             }
         }

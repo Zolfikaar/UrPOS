@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using UrPOS.Infrastructure.Data;
 using UrPOS.Presentation;
+using UrPOS.WinForms.Forms;
 
 namespace UrPOS.WinForms
 {
@@ -14,22 +15,32 @@ namespace UrPOS.WinForms
         {
             ApplicationConfiguration.Initialize();
 
-            // 1. بناء الـ Host وتجميع الـ DI Container
             var host = ServiceConfigurator.CreateHostBuilder().Build();
 
-            // 2. تهيئة قاعدة البيانات تلقائياً عند أول تشغيل
             using (var scope = host.Services.CreateScope())
             {
                 var dbInitializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
                 await dbInitializer.InitializeDatabaseAsync();
             }
 
-            // 3. تشغيل الشاشة الرئيسية مع حقن الخدمات تلقائياً
-            // var mainForm = host.Services.GetRequiredService<MainForm>();
-            // Application.Run(mainForm);
+            // حلقة تسجيل الدخول ← الشاشة الرئيسية (مع إمكانية الخروج وإعادة الدخول)
+            while (true)
+            {
+                using var loginForm = host.Services.GetRequiredService<LoginForm>();
+                if (loginForm.ShowDialog() != DialogResult.OK)
+                {
+                    break;
+                }
 
-            //ApplicationConfiguration.Initialize();
-            //Application.Run(new Form1());
+                using var mainForm = host.Services.GetRequiredService<MainForm>();
+                Application.Run(mainForm);
+
+                // Retry = المستخدم ضغط خروج لإعادة تسجيل الدخول
+                if (mainForm.DialogResult != DialogResult.Retry)
+                {
+                    break;
+                }
+            }
         }
     }
 }

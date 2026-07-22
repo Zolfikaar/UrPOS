@@ -51,5 +51,15 @@ namespace UrPOS.Infrastructure.Services
             // تصفية المواد التي وصل مخزونها للحد الأدنى المحدد أو أقل
             return allProducts.Where(p => p.CurrentStock <= p.MinStockLevel);
         }
+
+        public Task<Product?> GetByBarcodeAsync(string barcode)
+        {
+            return _productRepository.GetByBarcodeAsync(barcode);
+        }
+
+        public Task<IEnumerable<Product>> SearchByNameAsync(string name)
+        {
+            return _productRepository.SearchByNameAsync(name);
+        }
     }
 }

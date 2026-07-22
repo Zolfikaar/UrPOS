@@ -9,5 +9,7 @@ namespace UrPOS.Core.Interfaces
         Task<ServiceResult<int>> CreateProductAsync(Product product);
         Task<ServiceResult> UpdateProductAsync(Product product);
         Task<IEnumerable<Product>> GetLowStockProductsAsync(); // جلب المواد التي وصلت للحد الأدنى من المخزون
+        Task<Product?> GetByBarcodeAsync(string barcode);
+        Task<IEnumerable<Product>> SearchByNameAsync(string name);
     }
 }
