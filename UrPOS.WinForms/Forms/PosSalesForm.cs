@@ -69,6 +69,30 @@ namespace UrPOS.WinForms.Forms
             await SearchAndAddProductAsync();
         }
 
+        private void btnNewInvoice_Click(object? sender, EventArgs e)
+        {
+            MessageBox.Show(
+                this,
+                "واجهة فاتورة جديدة متعددة السلال قيد التجهيز (UI فقط — بدون منطق خلفي).",
+                "+ فاتورة جديدة",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information,
+                MessageBoxDefaultButton.Button1,
+                MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+        }
+
+        private void btnParkedInvoices_Click(object? sender, EventArgs e)
+        {
+            MessageBox.Show(
+                this,
+                "واجهة الفواتير المعلقة (Parked Orders) قيد التجهيز (UI فقط — بدون منطق خلفي).",
+                "الفواتير المعلقة",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information,
+                MessageBoxDefaultButton.Button1,
+                MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+        }
+
         private async Task SearchAndAddProductAsync()
         {
             if (_isBusy)

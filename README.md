@@ -1,33 +1,85 @@
-# 🚀 UrPOS - Core Engine & Infrastructure
+# UrPOS — Point of Sale System
 
-A unified Point of Sale (POS) and Inventory Management System core engine, engineered with Clean Architecture principles for high performance on local, lightweight machines.
+A unified Point of Sale (POS) and Inventory Management System built with Clean Architecture for local, high-performance desktop use.
 
-## 🏗️ Architectural Overview (Clean Architecture)
+## Current UI Enhancements & RTL
 
-The project is strictly decoupled into independent layers to ensure high maintainability, testability, and extensibility:
+The WinForms presentation layer is Arabic-first with full right-to-left layout:
 
-* **UrPOS.Core:** Contains Domain Entities, Interfaces, Stateful Session tracking (`UserSession`), and Service response abstractions (`ServiceResult`).
-* **UrPOS.Infrastructure:** 
-  * Micro-ORM Data Access powered by **Dapper** & **PostgreSQL**.
-  * Security & Cryptography using **BCrypt.Net-Next**.
-  * Local configuration storage with JSON (`JsonConfigurationService`).
-  * Embedded Schema Auto-Initialization & Migrations (`DbInitializer`).
-* **UrPOS.WinForms (Presentation):** UI layer powered by **Microsoft.Extensions.Hosting** for Dependency Injection.
-* **UrPOS.Tests:** Automated unit test suite leveraging **xUnit** and **Moq** for domain validation rules.
+| Form | RTL | Layout notes |
+|------|-----|--------------|
+| **LoginForm** | `RightToLeft = Yes`, `RightToLeftLayout = True` | Modern login card with teal accent; card stays centered on resize |
+| **MainForm** | Same | Right-side sidebar navigation + welcome content panel |
+| **PosSalesForm** | Same | Cart / search / numpad aligned for Arabic; multi-cart toolbar placeholders |
 
-## ⚡ Core Features & Highlights
+Labels, text boxes, and action buttons use RTL text alignment so Arabic UI reads naturally from right to left.
 
-- **Unified Invoice Engine:** Polymorphic inheritance for `SalesInvoice` and `PurchaseInvoice`, persisting lines and inventory movements atomically in single Transactions.
-- **Supplier & Inventory Ledger:** Automated stock movement logging and real-time supplier balance updates.
-- **Stateful Thread-Safe Security:** Password hashing via BCrypt and active cashier tracking using in-memory `UserSession` (Thread-Safe Singleton).
-- **Zero-Setup Database Deployment:** Auto-creates PostgreSQL database, initial schema, indexes, and seeded credentials (`admin` / `admin123`) on first boot.
-- **Robust Application Services:** Business-level validation layer protecting against inventory depletion and negative-margin sales.
+## Multi-Cart / Parked Orders (UI Overview)
 
-## 🛠️ Tech Stack & Dependencies
+On the POS screen (`PosSalesForm`), a toolbar above the cart provides **UI placeholders only** (no backend logic yet):
 
-- **Framework:** .NET 10.0 (C#)
-- **Data Access:** Dapper (Micro-ORM), Npgsql
-- **Security:** BCrypt.Net-Next
-- **Dependency Injection:** Microsoft.Extensions.Hosting
-- **Testing Suite:** xUnit, Moq
-- **Configuration:** System.Text.Json
+- **`+ فاتورة جديدة`** — reserved for starting an additional open cart / invoice
+- **`الفواتير المعلقة (0)`** — reserved for listing parked (held) orders; the count badge is static for now
+
+Existing cart controls (grid, remove item, clear cart, checkout, numpad) are unchanged.
+
+## MainForm Sidebar Navigation
+
+The right sidebar includes:
+
+| Button | Status |
+|--------|--------|
+| شاشة الكاشير (POS) | Opens the live POS dialog |
+| إدارة المنتجات | UI placeholder |
+| سجل الفواتير | UI placeholder |
+| الإعدادات والأمان | UI placeholder |
+
+## Project Structure
+
+```
+UrPOS/
+├── UrPOS.Core/              # Entities, interfaces, UserSession, ServiceResult
+├── UrPOS.Infrastructure/    # Dapper + PostgreSQL, auth, services, DbInitializer
+├── UrPOS.WinForms/          # Presentation (Login, Main, POS forms) + DI host
+│   └── Forms/
+│       ├── LoginForm.*
+│       ├── mainForm.*
+│       └── PosSalesForm.*
+├── UrPOS.Tests/             # xUnit + Moq
+└── README.md
+```
+
+## Core Features
+
+- **Unified invoice engine** — sales/purchase invoices with atomic line + inventory persistence
+- **Supplier & inventory ledger** — stock movements and supplier balances
+- **Security** — BCrypt password hashing and in-memory `UserSession`
+- **Zero-setup DB** — auto-creates PostgreSQL DB, schema, and seed user on first boot
+- **Arabic RTL UI** — login, shell, and cashier screens
+
+## Tech Stack
+
+- .NET 10.0 (C#) / WinForms
+- Dapper + Npgsql (PostgreSQL)
+- BCrypt.Net-Next
+- Microsoft.Extensions.Hosting (DI)
+- xUnit + Moq
+
+## How to Run
+
+1. Install **.NET 10 SDK** and a local **PostgreSQL** instance.
+2. Configure DB settings in `UrPOS.WinForms/appsettings.json` (`DbHost`, `DbPort`, `DbName`, `DbUsername`, `DbPassword`).
+3. From the repo root:
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project UrPOS.WinForms
+```
+
+4. Sign in with the seeded account (created on first boot if missing):
+
+- **Username:** `admin`
+- **Password:** `admin123`
+
+5. From **MainForm**, open **شاشة الكاشير (POS)** via the sidebar to sell; other sidebar items and multi-cart buttons are UI placeholders for upcoming features.

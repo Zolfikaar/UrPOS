@@ -11,7 +11,7 @@ namespace UrPOS.Core.Entities
         public int DbPort { get; set; } = 5432;
         public string DbName { get; set; } = "urpos_db";
         public string DbUsername { get; set; } = "postgres";
-        public string DbPassword { get; set; } = string.Empty;
+        public string DbPassword { get; set; } = "postgres"; // string.Empty;
 
         // === 2. إعدادات تشغيل النظام والهوية التجارية ===
         public string StoreName { get; set; } = string.Empty;

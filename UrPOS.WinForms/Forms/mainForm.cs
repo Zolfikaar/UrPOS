@@ -36,6 +36,33 @@ namespace UrPOS.WinForms.Forms
             posForm.ShowDialog(this);
         }
 
+        private void btnNavProducts_Click(object? sender, EventArgs e)
+        {
+            ShowUiPlaceholder("إدارة المنتجات", "شاشة إدارة المنتجات قيد التجهيز (واجهة فقط).");
+        }
+
+        private void btnNavInvoices_Click(object? sender, EventArgs e)
+        {
+            ShowUiPlaceholder("سجل الفواتير", "شاشة سجل الفواتير قيد التجهيز (واجهة فقط).");
+        }
+
+        private void btnNavSettings_Click(object? sender, EventArgs e)
+        {
+            ShowUiPlaceholder("الإعدادات والأمان", "شاشة الإعدادات والأمان قيد التجهيز (واجهة فقط).");
+        }
+
+        private void ShowUiPlaceholder(string title, string message)
+        {
+            MessageBox.Show(
+                this,
+                message,
+                title,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information,
+                MessageBoxDefaultButton.Button1,
+                MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+        }
+
         private void btnLogout_Click(object? sender, EventArgs e)
         {
             var confirm = MessageBox.Show(
