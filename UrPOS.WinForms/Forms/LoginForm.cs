@@ -20,6 +20,7 @@ namespace UrPOS.WinForms.Forms
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            CenterLoginCard();
             txtUsername.Focus();
         }
 

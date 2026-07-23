@@ -7,7 +7,9 @@ namespace UrPOS.WinForms.Forms
     {
         private System.ComponentModel.IContainer components = null;
 
+        private Panel pnlBackground;
         private Panel pnlCard;
+        private Panel pnlAccent;
         private Label lblBrand;
         private Label lblSubtitle;
         private Label lblUsername;
@@ -16,6 +18,7 @@ namespace UrPOS.WinForms.Forms
         private TextBox txtPassword;
         private Button btnLogin;
         private Label lblError;
+        private Label lblFooter;
 
         protected override void Dispose(bool disposing)
         {
@@ -30,7 +33,9 @@ namespace UrPOS.WinForms.Forms
         {
             components = new System.ComponentModel.Container();
 
+            pnlBackground = new Panel();
             pnlCard = new Panel();
+            pnlAccent = new Panel();
             lblBrand = new Label();
             lblSubtitle = new Label();
             lblUsername = new Label();
@@ -39,8 +44,10 @@ namespace UrPOS.WinForms.Forms
             txtPassword = new TextBox();
             btnLogin = new Button();
             lblError = new Label();
+            lblFooter = new Label();
 
             SuspendLayout();
+            pnlBackground.SuspendLayout();
             pnlCard.SuspendLayout();
 
             // LoginForm
@@ -49,30 +56,49 @@ namespace UrPOS.WinForms.Forms
             BackColor = Color.FromArgb(15, 23, 42);
             ClientSize = new Size(980, 640);
             Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            MaximizeBox = false;
-            MinimizeBox = false;
+            FormBorderStyle = FormBorderStyle.Sizable;
+            MinimumSize = new Size(720, 560);
+            MaximizeBox = true;
+            MinimizeBox = true;
             Name = "LoginForm";
             RightToLeft = RightToLeft.Yes;
             RightToLeftLayout = true;
             StartPosition = FormStartPosition.CenterScreen;
             Text = "UrPOS — تسجيل الدخول";
 
+            // pnlBackground — fills form; card is centered inside
+            pnlBackground.BackColor = Color.FromArgb(15, 23, 42);
+            pnlBackground.Dock = DockStyle.Fill;
+            pnlBackground.Name = "pnlBackground";
+
             // pnlCard
             pnlCard.Anchor = AnchorStyles.None;
             pnlCard.BackColor = Color.FromArgb(248, 250, 252);
-            pnlCard.Location = new Point(265, 95);
+            pnlCard.Location = new Point(265, 80);
             pnlCard.Name = "pnlCard";
-            pnlCard.Padding = new Padding(36, 32, 36, 32);
-            pnlCard.Size = new Size(450, 450);
+            pnlCard.Padding = new Padding(0);
+            pnlCard.Size = new Size(450, 480);
+
+            // pnlAccent — teal strip at top of card
+            pnlAccent.BackColor = Color.FromArgb(13, 148, 136);
+            pnlAccent.Dock = DockStyle.Top;
+            pnlAccent.Height = 6;
+            pnlAccent.Name = "pnlAccent";
+
+            var pnlBody = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Name = "pnlBody",
+                Padding = new Padding(40, 28, 40, 28)
+            };
 
             // lblBrand
             lblBrand.Dock = DockStyle.Top;
-            lblBrand.Font = new Font("Segoe UI Semibold", 28F, FontStyle.Bold, GraphicsUnit.Point);
+            lblBrand.Font = new Font("Segoe UI Semibold", 30F, FontStyle.Bold, GraphicsUnit.Point);
             lblBrand.ForeColor = Color.FromArgb(15, 23, 42);
             lblBrand.Name = "lblBrand";
-            lblBrand.Padding = new Padding(0, 8, 0, 0);
-            lblBrand.Size = new Size(378, 56);
+            lblBrand.Padding = new Padding(0, 4, 0, 0);
+            lblBrand.Size = new Size(370, 52);
             lblBrand.Text = "UrPOS";
             lblBrand.TextAlign = ContentAlignment.MiddleCenter;
 
@@ -81,17 +107,17 @@ namespace UrPOS.WinForms.Forms
             lblSubtitle.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
             lblSubtitle.ForeColor = Color.FromArgb(100, 116, 139);
             lblSubtitle.Name = "lblSubtitle";
-            lblSubtitle.Padding = new Padding(0, 0, 0, 20);
-            lblSubtitle.Size = new Size(378, 44);
-            lblSubtitle.Text = "نظام نقاط البيع";
+            lblSubtitle.Padding = new Padding(0, 0, 0, 18);
+            lblSubtitle.Size = new Size(370, 40);
+            lblSubtitle.Text = "نظام نقاط البيع — تسجيل الدخول";
             lblSubtitle.TextAlign = ContentAlignment.TopCenter;
 
             // lblUsername
             lblUsername.Dock = DockStyle.Top;
-            lblUsername.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+            lblUsername.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point);
             lblUsername.ForeColor = Color.FromArgb(51, 65, 85);
             lblUsername.Name = "lblUsername";
-            lblUsername.Size = new Size(378, 28);
+            lblUsername.Size = new Size(370, 26);
             lblUsername.Text = "اسم المستخدم";
             lblUsername.TextAlign = ContentAlignment.MiddleRight;
 
@@ -99,27 +125,27 @@ namespace UrPOS.WinForms.Forms
             txtUsername.BorderStyle = BorderStyle.FixedSingle;
             txtUsername.Dock = DockStyle.Top;
             txtUsername.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            txtUsername.Margin = new Padding(0, 0, 0, 12);
             txtUsername.Name = "txtUsername";
             txtUsername.PlaceholderText = "أدخل اسم المستخدم";
-            txtUsername.Size = new Size(378, 29);
+            txtUsername.RightToLeft = RightToLeft.Yes;
+            txtUsername.Size = new Size(370, 29);
             txtUsername.TabIndex = 0;
+            txtUsername.TextAlign = HorizontalAlignment.Right;
             txtUsername.KeyDown += txtUsername_KeyDown;
 
-            // spacer after username
             var spUsername = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 14,
+                Height = 16,
                 Name = "spUsername"
             };
 
             // lblPassword
             lblPassword.Dock = DockStyle.Top;
-            lblPassword.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+            lblPassword.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point);
             lblPassword.ForeColor = Color.FromArgb(51, 65, 85);
             lblPassword.Name = "lblPassword";
-            lblPassword.Size = new Size(378, 28);
+            lblPassword.Size = new Size(370, 26);
             lblPassword.Text = "كلمة المرور";
             lblPassword.TextAlign = ContentAlignment.MiddleRight;
 
@@ -130,15 +156,17 @@ namespace UrPOS.WinForms.Forms
             txtPassword.Name = "txtPassword";
             txtPassword.PasswordChar = '●';
             txtPassword.PlaceholderText = "أدخل كلمة المرور";
-            txtPassword.Size = new Size(378, 29);
+            txtPassword.RightToLeft = RightToLeft.Yes;
+            txtPassword.Size = new Size(370, 29);
             txtPassword.TabIndex = 1;
+            txtPassword.TextAlign = HorizontalAlignment.Right;
             txtPassword.UseSystemPasswordChar = true;
             txtPassword.KeyDown += txtPassword_KeyDown;
 
             var spPassword = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 18,
+                Height = 16,
                 Name = "spPassword"
             };
 
@@ -148,7 +176,7 @@ namespace UrPOS.WinForms.Forms
             lblError.ForeColor = Color.FromArgb(185, 28, 28);
             lblError.Name = "lblError";
             lblError.Padding = new Padding(4, 6, 4, 6);
-            lblError.Size = new Size(378, 42);
+            lblError.Size = new Size(370, 40);
             lblError.TextAlign = ContentAlignment.MiddleCenter;
             lblError.Visible = false;
 
@@ -168,35 +196,58 @@ namespace UrPOS.WinForms.Forms
             btnLogin.Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point);
             btnLogin.ForeColor = Color.White;
             btnLogin.Name = "btnLogin";
-            btnLogin.Size = new Size(378, 48);
+            btnLogin.Size = new Size(370, 48);
             btnLogin.TabIndex = 2;
             btnLogin.Text = "تسجيل الدخول";
             btnLogin.UseVisualStyleBackColor = false;
             btnLogin.Click += btnLogin_Click;
 
+            // lblFooter
+            lblFooter.Dock = DockStyle.Bottom;
+            lblFooter.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
+            lblFooter.ForeColor = Color.FromArgb(148, 163, 184);
+            lblFooter.Height = 28;
+            lblFooter.Name = "lblFooter";
+            lblFooter.Text = "واجهة عربية (RTL) — UrPOS";
+            lblFooter.TextAlign = ContentAlignment.MiddleCenter;
+
             // Dock order (bottom-first for Top dock)
-            pnlCard.Controls.Add(btnLogin);
-            pnlCard.Controls.Add(spError);
-            pnlCard.Controls.Add(lblError);
-            pnlCard.Controls.Add(spPassword);
-            pnlCard.Controls.Add(txtPassword);
-            pnlCard.Controls.Add(lblPassword);
-            pnlCard.Controls.Add(spUsername);
-            pnlCard.Controls.Add(txtUsername);
-            pnlCard.Controls.Add(lblUsername);
-            pnlCard.Controls.Add(lblSubtitle);
-            pnlCard.Controls.Add(lblBrand);
+            pnlBody.Controls.Add(btnLogin);
+            pnlBody.Controls.Add(spError);
+            pnlBody.Controls.Add(lblError);
+            pnlBody.Controls.Add(spPassword);
+            pnlBody.Controls.Add(txtPassword);
+            pnlBody.Controls.Add(lblPassword);
+            pnlBody.Controls.Add(spUsername);
+            pnlBody.Controls.Add(txtUsername);
+            pnlBody.Controls.Add(lblUsername);
+            pnlBody.Controls.Add(lblSubtitle);
+            pnlBody.Controls.Add(lblBrand);
+            pnlBody.Controls.Add(lblFooter);
 
-            Controls.Add(pnlCard);
+            pnlCard.Controls.Add(pnlBody);
+            pnlCard.Controls.Add(pnlAccent);
 
-            Resize += (_, _) =>
-            {
-                pnlCard.Left = (ClientSize.Width - pnlCard.Width) / 2;
-                pnlCard.Top = (ClientSize.Height - pnlCard.Height) / 2;
-            };
+            pnlBackground.Controls.Add(pnlCard);
+            Controls.Add(pnlBackground);
+
+            Load += (_, _) => CenterLoginCard();
+            Resize += (_, _) => CenterLoginCard();
 
             pnlCard.ResumeLayout(false);
+            pnlBackground.ResumeLayout(false);
             ResumeLayout(false);
+        }
+
+        private void CenterLoginCard()
+        {
+            if (pnlCard == null || pnlBackground == null)
+            {
+                return;
+            }
+
+            pnlCard.Left = Math.Max(0, (pnlBackground.ClientSize.Width - pnlCard.Width) / 2);
+            pnlCard.Top = Math.Max(0, (pnlBackground.ClientSize.Height - pnlCard.Height) / 2);
         }
     }
 }

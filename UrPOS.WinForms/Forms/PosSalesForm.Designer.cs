@@ -10,6 +10,9 @@ namespace UrPOS.WinForms.Forms
         private SplitContainer splitMain;
         private Panel pnlLeft;
         private Panel pnlRight;
+        private Panel pnlMultiCart;
+        private Button btnNewInvoice;
+        private Button btnParkedInvoices;
         private Label lblCartTitle;
         private DataGridView dgvCart;
         private Panel pnlCartActions;
@@ -46,6 +49,9 @@ namespace UrPOS.WinForms.Forms
             splitMain = new SplitContainer();
             pnlLeft = new Panel();
             pnlRight = new Panel();
+            pnlMultiCart = new Panel();
+            btnNewInvoice = new Button();
+            btnParkedInvoices = new Button();
             lblCartTitle = new Label();
             dgvCart = new DataGridView();
             pnlCartActions = new Panel();
@@ -72,6 +78,7 @@ namespace UrPOS.WinForms.Forms
             splitMain.SuspendLayout();
             pnlLeft.SuspendLayout();
             pnlRight.SuspendLayout();
+            pnlMultiCart.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCart).BeginInit();
             pnlCartActions.SuspendLayout();
             pnlSearch.SuspendLayout();
@@ -102,6 +109,51 @@ namespace UrPOS.WinForms.Forms
             pnlLeft.BackColor = Color.FromArgb(248, 250, 252);
             pnlLeft.Dock = DockStyle.Fill;
             pnlLeft.Padding = new Padding(16);
+            pnlLeft.RightToLeft = RightToLeft.Yes;
+
+            // Multi-cart / parked-orders toolbar (UI placeholders)
+            pnlMultiCart.Dock = DockStyle.Top;
+            pnlMultiCart.Height = 52;
+            pnlMultiCart.Name = "pnlMultiCart";
+            pnlMultiCart.Padding = new Padding(0, 0, 0, 8);
+            pnlMultiCart.RightToLeft = RightToLeft.Yes;
+
+            btnNewInvoice.BackColor = Color.FromArgb(13, 148, 136);
+            btnNewInvoice.Cursor = Cursors.Hand;
+            btnNewInvoice.Dock = DockStyle.Right;
+            btnNewInvoice.FlatAppearance.BorderSize = 0;
+            btnNewInvoice.FlatStyle = FlatStyle.Flat;
+            btnNewInvoice.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point);
+            btnNewInvoice.ForeColor = Color.White;
+            btnNewInvoice.Name = "btnNewInvoice";
+            btnNewInvoice.Size = new Size(160, 40);
+            btnNewInvoice.Text = "+ فاتورة جديدة";
+            btnNewInvoice.UseVisualStyleBackColor = false;
+            btnNewInvoice.Click += btnNewInvoice_Click;
+
+            var multiCartSpacer = new Panel
+            {
+                Dock = DockStyle.Right,
+                Width = 8,
+                Name = "spMultiCart"
+            };
+
+            btnParkedInvoices.BackColor = Color.FromArgb(51, 65, 85);
+            btnParkedInvoices.Cursor = Cursors.Hand;
+            btnParkedInvoices.Dock = DockStyle.Right;
+            btnParkedInvoices.FlatAppearance.BorderSize = 0;
+            btnParkedInvoices.FlatStyle = FlatStyle.Flat;
+            btnParkedInvoices.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point);
+            btnParkedInvoices.ForeColor = Color.White;
+            btnParkedInvoices.Name = "btnParkedInvoices";
+            btnParkedInvoices.Size = new Size(180, 40);
+            btnParkedInvoices.Text = "الفواتير المعلقة (0)";
+            btnParkedInvoices.UseVisualStyleBackColor = false;
+            btnParkedInvoices.Click += btnParkedInvoices_Click;
+
+            pnlMultiCart.Controls.Add(btnParkedInvoices);
+            pnlMultiCart.Controls.Add(multiCartSpacer);
+            pnlMultiCart.Controls.Add(btnNewInvoice);
 
             lblCartTitle.Dock = DockStyle.Top;
             lblCartTitle.Font = new Font("Segoe UI Semibold", 14F, FontStyle.Bold, GraphicsUnit.Point);
@@ -227,10 +279,12 @@ namespace UrPOS.WinForms.Forms
             pnlCartActions.Controls.Add(cartBtnSpacer);
             pnlCartActions.Controls.Add(btnClearCart);
 
+            // Dock order: Fill first, then Bottom, then Top (last Top is highest)
             pnlLeft.Controls.Add(dgvCart);
             pnlLeft.Controls.Add(pnlCartActions);
             pnlLeft.Controls.Add(lblAlert);
             pnlLeft.Controls.Add(lblCartTitle);
+            pnlLeft.Controls.Add(pnlMultiCart);
 
             // ===================== RIGHT: Search + Numpad + Totals =====================
             pnlRight.BackColor = Color.FromArgb(255, 255, 255);
@@ -260,7 +314,9 @@ namespace UrPOS.WinForms.Forms
             txtBarcode.Font = new Font("Segoe UI", 14F);
             txtBarcode.Name = "txtBarcode";
             txtBarcode.PlaceholderText = "امسح الباركود أو اكتب اسم المنتج ثم Enter";
+            txtBarcode.RightToLeft = RightToLeft.Yes;
             txtBarcode.TabIndex = 0;
+            txtBarcode.TextAlign = HorizontalAlignment.Right;
             txtBarcode.KeyDown += txtBarcode_KeyDown;
 
             btnSearch.BackColor = Color.FromArgb(13, 148, 136);
@@ -409,6 +465,7 @@ namespace UrPOS.WinForms.Forms
 
             ((System.ComponentModel.ISupportInitialize)dgvCart).EndInit();
             pnlCartActions.ResumeLayout(false);
+            pnlMultiCart.ResumeLayout(false);
             pnlSearch.ResumeLayout(false);
             tblNumpad.ResumeLayout(false);
             pnlTotals.ResumeLayout(false);
