@@ -46,18 +46,48 @@ namespace UrPOS.Core.Interfaces
             }
         }
 
-        public void LoadConfigurations() 
+        //public void LoadConfigurations() 
+        //{
+        //    try
+        //    {
+        //        if(File.Exists(_filePath))
+        //        {
+        //            var jsonString = File.ReadAllText(_filePath);
+        //            _cachedConfigurations = JsonSerializer.Deserialize<AppConfigurations>(jsonString);
+        //        }
+
+        //        // إذا لم يكن الملف موجوداً، ننشئ إعدادات افتراضية ونحفظها لتوليد الملف تلقائياً
+        //        if(_cachedConfigurations == null)
+        //        {
+        //            _cachedConfigurations = new AppConfigurations();
+        //            SaveConfigrations(_cachedConfigurations);
+        //        }
+        //    }
+        //    catch
+        //    {
+        //        // في حال وجود تلف في ملف الـ JSON، نعتمد خياراً آمناً
+        //        _cachedConfigurations = new AppConfigurations();
+        //    }
+        //}
+
+        private void LoadConfigurations()
         {
             try
             {
-                if(File.Exists(_filePath))
+                if (File.Exists(_filePath))
                 {
                     var jsonString = File.ReadAllText(_filePath);
-                    _cachedConfigurations = JsonSerializer.Deserialize<AppConfigurations>(jsonString);
+
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true // تجنب الحساسية لحالة الأحرف (Capital/Small)
+                    };
+
+                    _cachedConfigurations = JsonSerializer.Deserialize<AppConfigurations>(jsonString, options);
                 }
 
-                // إذا لم يكن الملف موجوداً، ننشئ إعدادات افتراضية ونحفظها لتوليد الملف تلقائياً
-                if(_cachedConfigurations == null)
+                // إذا فشلت القراءة أو كان الملف غير موجود
+                if (_cachedConfigurations == null || string.IsNullOrEmpty(_cachedConfigurations.DbPassword))
                 {
                     _cachedConfigurations = new AppConfigurations();
                     SaveConfigrations(_cachedConfigurations);
@@ -65,7 +95,7 @@ namespace UrPOS.Core.Interfaces
             }
             catch
             {
-                // في حال وجود تلف في ملف الـ JSON، نعتمد خياراً آمناً
+                // في حال وجود خطأ في تنسيق الـ JSON (مثل الفواصل الزائدة)
                 _cachedConfigurations = new AppConfigurations();
             }
         }

@@ -13,6 +13,9 @@ namespace UrPOS.WinForms
         [STAThread]
         static async Task Main()
         {
+            // تفعيل مطابقة أسماء الأعمدة ذات الـ underscore تلقائياً مع C# PascalCase
+            Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+
             ApplicationConfiguration.Initialize();
 
             var host = ServiceConfigurator.CreateHostBuilder().Build();
