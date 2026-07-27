@@ -29,7 +29,9 @@ namespace UrPOS.Infrastructure.Data
             await ExecuteInitialSchemaScriptAsync();
 
             // 3. زراعة حساب المدير الافتراضي (Admin) إذا لم يكن موجوداً
-            await SeedDefaultAdminUserAsync();
+            //await SeedDefaultAdminUserAsync();
+
+            await SeedRolesAsync();
         }
 
         private async Task EnsureDatabaseExistsAsync()
@@ -109,5 +111,24 @@ namespace UrPOS.Infrastructure.Data
                 }
             }
         }
+
+        private async Task SeedRolesAsync() 
+        {
+            using var connection = new NpgsqlConnection(_configs.GetConnectionString());
+            await connection.OpenAsync();
+            const string checkRolesSql = "SELECT COUNT(1) FROM roles;";
+            var rolesCount = await connection.ExecuteScalarAsync<int>(checkRolesSql);
+            if (rolesCount == 0)
+            {
+                // إضافة الأدوار الافتراضية
+                const string insertRolesSql = @"
+                    INSERT INTO roles (name) VALUES 
+                    ('Admin'),
+                    ('Manager'),
+                    ('Cashier');";
+                await connection.ExecuteAsync(insertRolesSql);
+            }
+        }
+
     }
 }

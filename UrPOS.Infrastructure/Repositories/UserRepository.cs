@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading.Tasks;
-using Dapper;
+﻿using Dapper;
 using UrPOS.Core.Entities;
 using UrPOS.Core.Interfaces;
 using UrPOS.Infrastructure.Data;
@@ -103,6 +99,36 @@ namespace UrPOS.Infrastructure.Repositories
             const string sql = "UPDATE users SET is_active = @IsActive WHERE id = @Id;";
             var rowsAffected = await connection.ExecuteAsync(sql, new { Id = userId, IsActive = isActive });
             return rowsAffected > 0;
+        }
+    
+        public async Task<bool> HasAnyUsersAsync()
+        {
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            const string sql = "SELECT EXISTS(SELECT 1 FROM users);";
+            return await connection.ExecuteScalarAsync<bool>(sql);
+        }
+
+        public async Task<int> CreateAdminUserAsync(User user)
+        {
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+
+            // 1. إدخال بيانات المستخدم مع البريد والهاتف
+            const string insertUserSql = @"
+                INSERT INTO users (username, password_hash, full_name, email, phone, is_active, created_at)
+                VALUES (@Username, @PasswordHash, @FullName, @Email, @Phone, @IsActive, NOW())
+                RETURNING id;";
+
+            var userId = await connection.ExecuteScalarAsync<int>(insertUserSql, user);
+
+            // 2. ربط المستخدم تلقائياً بدور Admin (Role ID = 1) في جدول user_roles
+            const string insertRoleSql = @"
+                INSERT INTO user_roles (user_id, role_id) 
+                VALUES (@UserId, 1) 
+                ON CONFLICT DO NOTHING;";
+
+            await connection.ExecuteAsync(insertRoleSql, new { UserId = userId });
+
+            return userId;
         }
     }
 }

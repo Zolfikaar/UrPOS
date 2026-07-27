@@ -12,5 +12,7 @@ namespace UrPOS.Core.Interfaces
         Task<int> AddAsync(User user, int roleId); // نمرر الـ roleId عند الإنشاء
         Task<bool> UpdateAsync(User user);
         Task<bool> UpdateStatusAsync(int userId, bool isActive); // تجميد أو تفعيل الحساب سريعاً
+        Task<bool> HasAnyUsersAsync(); // للتحقق من وجود أي مستخدم في قاعدة البيانات
+        Task<int> CreateAdminUserAsync(User user);
     }
 }

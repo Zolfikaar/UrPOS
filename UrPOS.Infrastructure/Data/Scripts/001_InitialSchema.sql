@@ -102,3 +102,6 @@ CREATE TABLE IF NOT EXISTS purchase_invoice_items (
     cost_price NUMERIC(12, 3) NOT NULL,
     total_price NUMERIC(12, 3) NOT NULL
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(150);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20);

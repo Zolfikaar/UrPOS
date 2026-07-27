@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using UrPOS.Core.Entities;
 using UrPOS.Core.Interfaces;
+using UrPOS.Infrastructure.Repositories;
 
 namespace UrPOS.Infrastructure.Services
 {
