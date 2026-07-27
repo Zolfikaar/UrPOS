@@ -29,6 +29,34 @@ namespace UrPOS.WinForms.Forms
             await AttemptLoginAsync();
         }
 
+        private async void btnCreateGuest_Click(object sender, EventArgs e)
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            try
+            {
+                SetBusy(true);
+                await _authService.LoginAsGuestAsync();
+                DialogResult = DialogResult.OK;
+                Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"حدث خطأ أثناء تسجيل دخول الضيف: {ex.Message}",
+                    "خطأ",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            finally
+            {
+                SetBusy(false);
+            }
+        }
+
         private async void txtPassword_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -103,6 +131,7 @@ namespace UrPOS.WinForms.Forms
         {
             _isBusy = isBusy;
             btnLogin.Enabled = !isBusy;
+            btnCreateGuest.Enabled = !isBusy;
             txtUsername.Enabled = !isBusy;
             txtPassword.Enabled = !isBusy;
             btnLogin.Text = isBusy ? "جاري التحقق..." : "تسجيل الدخول";

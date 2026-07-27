@@ -10,6 +10,7 @@ namespace UrPOS.WinForms.Forms
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IAuthService _authService;
+        private bool _guestCleanupCompleted;
 
         public MainForm(IServiceProvider serviceProvider, IAuthService authService)
         {
@@ -17,6 +18,7 @@ namespace UrPOS.WinForms.Forms
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             InitializeComponent();
             ApplySessionInfo();
+            FormClosing += MainForm_FormClosing;
         }
 
         private void ApplySessionInfo()
@@ -63,7 +65,7 @@ namespace UrPOS.WinForms.Forms
                 MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
         }
 
-        private void btnLogout_Click(object? sender, EventArgs e)
+        private async void btnLogout_Click(object sender, EventArgs e)
         {
             var confirm = MessageBox.Show(
                 this,
@@ -79,9 +81,49 @@ namespace UrPOS.WinForms.Forms
                 return;
             }
 
-            _authService.Logout();
+            if (UserSession.Instance.IsGuest)
+            {
+                await _authService.CleanupGuestSessionAsync();
+            }
+            else
+            {
+                _authService.Logout();
+            }
+
+            _guestCleanupCompleted = true;
             DialogResult = DialogResult.Retry;
             Close();
+        }
+
+        private async void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            if (_guestCleanupCompleted || !UserSession.Instance.IsGuest)
+            {
+                return;
+            }
+
+            // إلغاء الإغلاق مؤقتاً حتى يكتمل حذف سجل الضيف من PostgreSQL
+            e.Cancel = true;
+            _guestCleanupCompleted = true;
+
+            try
+            {
+                await _authService.CleanupGuestSessionAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    this,
+                    $"تعذر حذف سجل الضيف من قاعدة البيانات: {ex.Message}",
+                    "تحذير",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button1,
+                    MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+            }
+
+            // أعد الإغلاق بعد اكتمال التنظيف (DialogResult يبقى كما هو — Retry من Logout أو None عند X)
+            BeginInvoke(new Action(Close));
         }
     }
 }

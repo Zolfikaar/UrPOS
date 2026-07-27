@@ -319,6 +319,17 @@ namespace UrPOS.WinForms.Forms
 
         private async void btnCheckout_Click(object? sender, EventArgs e)
         {
+            if (UserSession.Instance.IsGuest)
+            {
+                MessageBox.Show(
+                    "أنت حالياً في وضع الضيف التجريبي.\nيمكنك تجربة السلة والبحث فقط، ولا يمكن حفظ المبيعات الفعلية.",
+                    "وضع التجربة",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+                return;
+            }
+
             await CheckoutAsync();
         }
 
@@ -444,6 +455,11 @@ namespace UrPOS.WinForms.Forms
         {
             lblAlert.Visible = false;
             lblAlert.Text = string.Empty;
+        }
+
+        private void dgvCart_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
         }
     }
 }

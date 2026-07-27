@@ -17,6 +17,7 @@ namespace UrPOS.WinForms.Forms
         private Label lblPassword;
         private TextBox txtPassword;
         private Button btnLogin;
+        private Button btnCreateGuest;
         private Label lblError;
         private Label lblFooter;
 
@@ -43,6 +44,7 @@ namespace UrPOS.WinForms.Forms
             lblPassword = new Label();
             txtPassword = new TextBox();
             btnLogin = new Button();
+            btnCreateGuest = new Button();
             lblError = new Label();
             lblFooter = new Label();
 
@@ -77,7 +79,7 @@ namespace UrPOS.WinForms.Forms
             pnlCard.Location = new Point(265, 80);
             pnlCard.Name = "pnlCard";
             pnlCard.Padding = new Padding(0);
-            pnlCard.Size = new Size(450, 480);
+            pnlCard.Size = new Size(450, 540);
 
             // pnlAccent — teal strip at top of card
             pnlAccent.BackColor = Color.FromArgb(13, 148, 136);
@@ -190,6 +192,7 @@ namespace UrPOS.WinForms.Forms
             // btnLogin
             btnLogin.BackColor = Color.FromArgb(13, 148, 136);
             btnLogin.Cursor = Cursors.Hand;
+            btnLogin.DialogResult = DialogResult.None;
             btnLogin.Dock = DockStyle.Top;
             btnLogin.FlatAppearance.BorderSize = 0;
             btnLogin.FlatStyle = FlatStyle.Flat;
@@ -202,6 +205,30 @@ namespace UrPOS.WinForms.Forms
             btnLogin.UseVisualStyleBackColor = false;
             btnLogin.Click += btnLogin_Click;
 
+            var spGuest = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 12,
+                Name = "spGuest"
+            };
+
+            // btnCreateGuest
+            btnCreateGuest.BackColor = Color.FromArgb(248, 250, 252);
+            btnCreateGuest.Cursor = Cursors.Hand;
+            btnCreateGuest.DialogResult = DialogResult.None;
+            btnCreateGuest.Dock = DockStyle.Top;
+            btnCreateGuest.FlatAppearance.BorderColor = Color.FromArgb(13, 148, 136);
+            btnCreateGuest.FlatAppearance.BorderSize = 1;
+            btnCreateGuest.FlatStyle = FlatStyle.Flat;
+            btnCreateGuest.Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold, GraphicsUnit.Point);
+            btnCreateGuest.ForeColor = Color.FromArgb(13, 148, 136);
+            btnCreateGuest.Name = "btnCreateGuest";
+            btnCreateGuest.Size = new Size(370, 44);
+            btnCreateGuest.TabIndex = 3;
+            btnCreateGuest.Text = "دخول كضيف";
+            btnCreateGuest.UseVisualStyleBackColor = false;
+            btnCreateGuest.Click += btnCreateGuest_Click;
+
             // lblFooter
             lblFooter.Dock = DockStyle.Bottom;
             lblFooter.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
@@ -212,6 +239,8 @@ namespace UrPOS.WinForms.Forms
             lblFooter.TextAlign = ContentAlignment.MiddleCenter;
 
             // Dock order (bottom-first for Top dock)
+            pnlBody.Controls.Add(btnCreateGuest);
+            pnlBody.Controls.Add(spGuest);
             pnlBody.Controls.Add(btnLogin);
             pnlBody.Controls.Add(spError);
             pnlBody.Controls.Add(lblError);

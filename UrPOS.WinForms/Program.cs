@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using UrPOS.Core.Entities;
 using UrPOS.Core.Interfaces;
 using UrPOS.Infrastructure.Data;
 using UrPOS.Presentation;
@@ -25,7 +27,7 @@ namespace UrPOS.WinForms
                 await dbInitializer.InitializeDatabaseAsync();
             }
 
-            // 2. فحص هل يوجد أي مستخدم بالداتابيس؟
+            // 2. فحص هل يوجد أي مستخدم بالداتابيس؟ (يحدد فقط إن كان SetupForm مطلوباً)
             bool hasUsers;
             using (var scope = host.Services.CreateScope())
             {
@@ -33,7 +35,8 @@ namespace UrPOS.WinForms
                 hasUsers = await userRepo.HasAnyUsersAsync();
             }
 
-            // 3. إذا لم يوجد مستخدمين، نفتح واجهة الإعداد لأول مرة (SetupWizardForm)
+            // 3. إذا لم يوجد مستخدمين، نفتح واجهة الإعداد لأول مرة (SetupForm)
+            //    ملاحظة: دخول الضيف من SetupForm يضبط الجلسة ويُنشئ سجل guest — لا نُعيد فتح SetupForm لاحقاً بسبب IsGuest.
             if (!hasUsers)
             {
                 using var setupForm = host.Services.GetRequiredService<SetupForm>();
@@ -44,19 +47,26 @@ namespace UrPOS.WinForms
                 }
             }
 
-            // حلقة تسجيل الدخول ← الشاشة الرئيسية (مع إمكانية الخروج وإعادة الدخول)
+            // 4. حلقة تسجيل الدخول ← الشاشة الرئيسية (سواء للمستخدم أو للضيف)
             while (true)
             {
-                using var loginForm = host.Services.GetRequiredService<LoginForm>();
-                if (loginForm.ShowDialog() != DialogResult.OK)
+                // إذا كانت الجلسة نشطة مسبقاً (مثلاً دخول ضيف من SetupForm)، نتخطى LoginForm
+                if (!UserSession.Instance.IsLoggedIn)
                 {
-                    break;
+                    using var loginForm = host.Services.GetRequiredService<LoginForm>();
+
+                    // Guest Login و Login العادي يجب أن يعيدا DialogResult.OK
+                    if (loginForm.ShowDialog() != DialogResult.OK)
+                    {
+                        break;
+                    }
                 }
 
+                // بمجرد وجود جلسة صالحة (عادية أو ضيف)، تفتح الشاشة الرئيسية
                 using var mainForm = host.Services.GetRequiredService<MainForm>();
                 Application.Run(mainForm);
 
-                // Retry = المستخدم ضغط خروج لإعادة تسجيل الدخول
+                // إذا ضغط المستخدم "تسجيل الخروج"، ترجع Retry لتكرار الحلقة وفتح LoginForm مجدداً
                 if (mainForm.DialogResult != DialogResult.Retry)
                 {
                     break;

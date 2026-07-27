@@ -32,6 +32,33 @@ namespace UrPOS.Infrastructure.Data
             //await SeedDefaultAdminUserAsync();
 
             await SeedRolesAsync();
+
+            // 4. مسح سجلات الضيف اليتيمة المتبقية بعد تعطل غير متوقع
+            await CleanupOrphanGuestUsersAsync();
+        }
+
+        private async Task CleanupOrphanGuestUsersAsync()
+        {
+            using var connection = new NpgsqlConnection(_configs.GetConnectionString());
+            await connection.OpenAsync();
+
+            // فك ارتباط أي فواتير تشير لسجلات guest ثم حذفها
+            const string sql = @"
+                UPDATE sales_invoices
+                SET user_id = NULL
+                WHERE user_id IN (SELECT id FROM users WHERE LOWER(username) = 'guest');
+
+                UPDATE purchase_invoices
+                SET user_id = NULL
+                WHERE user_id IN (SELECT id FROM users WHERE LOWER(username) = 'guest');
+
+                DELETE FROM user_roles
+                WHERE user_id IN (SELECT id FROM users WHERE LOWER(username) = 'guest');
+
+                DELETE FROM users
+                WHERE LOWER(username) = 'guest';";
+
+            await connection.ExecuteAsync(sql);
         }
 
         private async Task EnsureDatabaseExistsAsync()

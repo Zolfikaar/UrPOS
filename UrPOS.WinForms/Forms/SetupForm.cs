@@ -1,5 +1,6 @@
-using UrPOS.Core.Interfaces;
 using UrPOS.Core.Entities;
+using UrPOS.Core.Interfaces;
+using UrPOS.Infrastructure.Services;
 
 namespace UrPOS.WinForms
 {
@@ -7,12 +8,14 @@ namespace UrPOS.WinForms
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IAuthService _authService;
 
-        public SetupForm(IUserRepository userRepository, IPasswordHasher passwordHasher)
+        public SetupForm(IUserRepository userRepository, IPasswordHasher passwordHasher, IAuthService authService)
         {
             InitializeComponent();
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
+            _authService = authService;
         }
 
         private async void btnCreateAdmin_Click(object sender, EventArgs e)
@@ -47,6 +50,12 @@ namespace UrPOS.WinForms
         }
 
 
+        private async void BtnCreateGuest_Click(object sender, EventArgs e)
+        {
 
+            await _authService.LoginAsGuestAsync();
+            this.DialogResult = DialogResult.OK;
+            this.Close();
+        }
     }
 }

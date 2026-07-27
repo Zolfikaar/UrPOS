@@ -12,7 +12,13 @@ namespace UrPOS.Core.Entities
         public string UserName { get; private set; } = string.Empty;
         public string FullName { get; private set; } = string.Empty;
         public string RoleName { get; private set; } = string.Empty;
-        public bool IsLoggedIn => UserId.HasValue;
+
+        /// <summary>
+        /// يُضبط إلى true بعد Start(...) عند دخول الضيف.
+        /// </summary>
+        public bool IsGuest { get; set; }
+
+        public bool IsLoggedIn => UserId.HasValue || IsGuest;
 
         // constructor مخفي لمنع الإنشاء العشوائي
         private UserSession() { }
@@ -28,13 +34,14 @@ namespace UrPOS.Core.Entities
             }
         }
 
-        // دالة بدء الجلسة عند تسجيل الدخول الناجح
+        // دالة بدء الجلسة للمستخدم الطبيعي
         public void Start(int userId, string username, string fullName, string roleName)
         {
             UserId = userId;
             UserName = username;
             FullName = fullName;
-            RoleName = roleName;
+            RoleName = string.IsNullOrWhiteSpace(roleName) ? "Cashier" : roleName;
+            IsGuest = false;
         }
 
         public void Clear()
@@ -43,6 +50,7 @@ namespace UrPOS.Core.Entities
             UserName = string.Empty;
             FullName = string.Empty;
             RoleName = string.Empty;
+            IsGuest = false;
         }
     }
 }

@@ -130,5 +130,71 @@ namespace UrPOS.Infrastructure.Repositories
 
             return userId;
         }
+
+        public async Task<User> EnsureGuestUserAsync(string passwordHash)
+        {
+            const string guestUsername = "guest";
+
+            var existing = await GetByUsernameAsync(guestUsername);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            if (string.IsNullOrWhiteSpace(passwordHash))
+            {
+                throw new ArgumentException("Password hash is required to create the guest user.", nameof(passwordHash));
+            }
+
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+
+            // دور Cashier من جدول الأدوار (id = 2 في السكيمة الافتراضية)
+            const string roleSql = "SELECT id FROM roles WHERE role_name = 'Cashier' ORDER BY id LIMIT 1;";
+            var cashierRoleId = await connection.ExecuteScalarAsync<int?>(roleSql) ?? 2;
+
+            var guestUser = new User
+            {
+                Username = guestUsername,
+                PasswordHash = passwordHash,
+                FullName = "زائر تجريبي",
+                IsActive = true
+            };
+
+            var guestId = await AddAsync(guestUser, cashierRoleId);
+            var created = await GetByIdAsync(guestId);
+
+            return created ?? throw new InvalidOperationException("تعذر إنشاء أو استرجاع مستخدم الضيف.");
+        }
+
+        public async Task DeleteGuestUserAsync(int guestUserId)
+        {
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                // فك ارتباط الفواتير التي تشير للمستخدم (بدون ON DELETE CASCADE)
+                const string nullSalesSql = "UPDATE sales_invoices SET user_id = NULL WHERE user_id = @GuestUserId;";
+                await connection.ExecuteAsync(nullSalesSql, new { GuestUserId = guestUserId }, transaction);
+
+                const string nullPurchaseSql = "UPDATE purchase_invoices SET user_id = NULL WHERE user_id = @GuestUserId;";
+                await connection.ExecuteAsync(nullPurchaseSql, new { GuestUserId = guestUserId }, transaction);
+
+                // user_roles لديه ON DELETE CASCADE، لكن الحذف الصريح أوضح وأكثر أماناً
+                const string deleteRolesSql = "DELETE FROM user_roles WHERE user_id = @GuestUserId;";
+                await connection.ExecuteAsync(deleteRolesSql, new { GuestUserId = guestUserId }, transaction);
+
+                const string deleteUserSql = @"
+                    DELETE FROM users
+                    WHERE id = @GuestUserId AND username = 'guest';";
+                await connection.ExecuteAsync(deleteUserSql, new { GuestUserId = guestUserId }, transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }

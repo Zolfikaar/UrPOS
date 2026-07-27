@@ -1,8 +1,5 @@
-﻿using System;
-using System.Threading.Tasks;
-using UrPOS.Core.Entities;
+﻿using UrPOS.Core.Entities;
 using UrPOS.Core.Interfaces;
-using UrPOS.Infrastructure.Repositories;
 
 namespace UrPOS.Infrastructure.Services
 {
@@ -48,9 +45,39 @@ namespace UrPOS.Infrastructure.Services
             return true;
         }
 
+        public async Task<bool> LoginAsGuestAsync()
+        {
+            // كلمة مرور عشوائية — الضيف لا يسجّل دخولاً عادياً بكلمة مرور
+            var passwordHash = _passwordHasher.HashPassword(Guid.NewGuid().ToString("N"));
+            var guest = await _userRepository.EnsureGuestUserAsync(passwordHash);
+
+            UserSession.Instance.Start(
+                guest.Id,
+                guest.Username,
+                guest.FullName,
+                guest.RoleName ?? "Cashier");
+            UserSession.Instance.IsGuest = true;
+
+            return true;
+        }
+
+        public async Task CleanupGuestSessionAsync()
+        {
+            if (UserSession.Instance.IsGuest && UserSession.Instance.UserId.HasValue)
+            {
+                var guestId = UserSession.Instance.UserId.Value;
+                await _userRepository.DeleteGuestUserAsync(guestId);
+                UserSession.Instance.Clear();
+            }
+            else if (UserSession.Instance.IsGuest)
+            {
+                UserSession.Instance.Clear();
+            }
+        }
+
         public void Logout()
         {
-            // تصفير الجلسة تماماً من الذاكرة
+            // تصفير الجلسة تماماً من الذاكرة (للمستخدم العادي)
             UserSession.Instance.Clear();
         }
     }

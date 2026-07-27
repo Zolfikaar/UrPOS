@@ -138,6 +138,7 @@
             btnCreateGuest.TabIndex = 9;
             btnCreateGuest.Text = "الدخول كضيف";
             btnCreateGuest.UseVisualStyleBackColor = true;
+            btnCreateGuest.Click += BtnCreateGuest_Click;
             // 
             // SetupForm
             // 
