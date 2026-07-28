@@ -1,75 +1,92 @@
-# UrPOS — Point of Sale System
+# UrPOS — Offline-First Point of Sale
 
-A unified Point of Sale (POS) and Inventory Management System built with Clean Architecture for local, high-performance desktop use.
+UrPOS is a modern, **offline-first** Point of Sale and inventory system for local desktop use. It is built with **C# / .NET**, **WinForms**, **Dapper**, and **PostgreSQL**, with a full Arabic **RTL** presentation layer.
 
-## Current UI Enhancements & RTL
-
-The WinForms presentation layer is Arabic-first with full right-to-left layout:
-
-| Form | RTL | Layout notes |
-|------|-----|--------------|
-| **LoginForm** | `RightToLeft = Yes`, `RightToLeftLayout = True` | Modern login card with teal accent; card stays centered on resize |
-| **MainForm** | Same | Right-side sidebar navigation + welcome content panel |
-| **PosSalesForm** | Same | Cart / search / numpad aligned for Arabic; multi-cart toolbar placeholders |
-
-Labels, text boxes, and action buttons use RTL text alignment so Arabic UI reads naturally from right to left.
-
-## Multi-Cart / Parked Orders (UI Overview)
-
-On the POS screen (`PosSalesForm`), a toolbar above the cart provides **UI placeholders only** (no backend logic yet):
-
-- **`+ فاتورة جديدة`** — reserved for starting an additional open cart / invoice
-- **`الفواتير المعلقة (0)`** — reserved for listing parked (held) orders; the count badge is static for now
-
-Existing cart controls (grid, remove item, clear cart, checkout, numpad) are unchanged.
-
-## MainForm Sidebar Navigation
-
-The right sidebar includes:
-
-| Button | Status |
-|--------|--------|
-| شاشة الكاشير (POS) | Opens the live POS dialog |
-| إدارة المنتجات | UI placeholder |
-| سجل الفواتير | UI placeholder |
-| الإعدادات والأمان | UI placeholder |
-
-## Project Structure
+## Architecture (Clean Architecture)
 
 ```
 UrPOS/
-├── UrPOS.Core/              # Entities, interfaces, UserSession, ServiceResult
+├── UrPOS.Core/              # Domain entities, interfaces, UserSession, ServiceResult
 ├── UrPOS.Infrastructure/    # Dapper + PostgreSQL, auth, services, DbInitializer
-├── UrPOS.WinForms/          # Presentation (Login, Main, POS forms) + DI host
-│   └── Forms/
-│       ├── LoginForm.*
-│       ├── mainForm.*
-│       └── PosSalesForm.*
+├── UrPOS.WinForms/          # UI (Setup, Login, Main shell, POS) + DI host
+│   ├── Controls/            # EmptyStateControl, SettingsControl
+│   └── Forms/               # SetupForm, LoginForm, MainForm, PosSalesForm
 ├── UrPOS.Tests/             # xUnit + Moq
 └── README.md
 ```
 
-## Core Features
+| Layer | Responsibility |
+|-------|----------------|
+| **Core** | Entities, repository/service contracts, thread-safe `UserSession` |
+| **Infrastructure** | Dapper repositories, BCrypt hashing, JSON config, schema seed |
+| **WinForms** | Presentation + `Microsoft.Extensions.Hosting` Dependency Injection |
 
-- **Unified invoice engine** — sales/purchase invoices with atomic line + inventory persistence
-- **Supplier & inventory ledger** — stock movements and supplier balances
-- **Security** — BCrypt password hashing and in-memory `UserSession`
-- **Zero-setup DB** — auto-creates PostgreSQL DB, schema, and seed user on first boot
-- **Arabic RTL UI** — login, shell, and cashier screens
+Composition root: `ServiceConfigurator` registers services and forms; `Program.Main` initializes the database, optionally shows the first-run wizard, then runs the login → main shell loop.
+
+## Key Features Implemented
+
+- **First-Run Setup Wizard (`SetupForm`)** — Dark-themed RTL card matching `LoginForm`; create admin account or enter as guest.
+- **Authentication & roles** — Login with hashed passwords; role name shown in the main header.
+- **Guest Demo Mode** — Temporary `guest` account is created on guest login and **automatically cleaned up** on logout or app exit.
+- **Main shell (`MainForm`)** — RTL sidebar navigation, right-aligned user header, dashboard with quick actions.
+- **POS sales (`PosSalesForm`)** — Cart grid with Arabic headers, barcode search, numpad, totals panel, multi-cart UI placeholders.
+- **Centralized UI placeholders** — Products & Invoices show Arabic empty states; **Settings** has tabs for store profile, backup/security, and system preferences (visual layout ready for wiring).
+
+## UI / RTL Notes
+
+All primary forms use `RightToLeft = Yes` and `RightToLeftLayout = True`:
+
+| Screen | Highlights |
+|--------|------------|
+| Setup / Login | Centered card, teal accent, RTL field alignment |
+| MainForm | Right sidebar, right-aligned welcome/role, dashboard shortcuts |
+| PosSalesForm | Arabic grid headers (`اسم المنتج`, `الكمية`, `السعر المفرد`, `الإجمالي`), bottom payment summary |
+
+### Dashboard quick actions
+
+- **شاشة البيع السريعة** → opens POS
+- **إضافة منتج جديد** → Products empty-state view
+- **النسخ الاحتياطي** → Settings → backup tab
 
 ## Tech Stack
 
-- .NET 10.0 (C#) / WinForms
+- .NET 10 / WinForms
 - Dapper + Npgsql (PostgreSQL)
 - BCrypt.Net-Next
 - Microsoft.Extensions.Hosting (DI)
+- System.Text.Json (`appsettings.json`)
 - xUnit + Moq
 
-## How to Run
+## Getting Started
 
-1. Install **.NET 10 SDK** and a local **PostgreSQL** instance.
-2. Configure DB settings in `UrPOS.WinForms/appsettings.json` (`DbHost`, `DbPort`, `DbName`, `DbUsername`, `DbPassword`).
-3. From the repo root:
+### Prerequisites
+
+1. **.NET 10 SDK**
+2. Local **PostgreSQL** instance (running and reachable)
+
+### Database configuration
+
+Edit `UrPOS.WinForms/appsettings.json`:
+
+```json
+{
+  "DbHost": "localhost",
+  "DbPort": 5432,
+  "DbName": "urpos_db",
+  "DbUsername": "postgres",
+  "DbPassword": "postgres"
+}
+```
+
+On startup, `DbInitializer` will:
+
+1. Ensure the database exists
+2. Apply the embedded schema script (`001_InitialSchema.sql`)
+3. Clean orphan guest rows if needed
+
+*(There is no separate EF migration step — schema is applied by the initializer.)*
+
+### Build & run
 
 ```bash
 dotnet restore
@@ -77,9 +94,16 @@ dotnet build
 dotnet run --project UrPOS.WinForms
 ```
 
-4. Sign in with the seeded account (created on first boot if missing):
+### First launch
 
-- **Username:** `admin`
-- **Password:** `admin123`
+- If **no users** exist → `SetupForm` appears (create admin **or** enter as guest).
+- Otherwise → `LoginForm`.
 
-5. From **MainForm**, open **شاشة الكاشير (POS)** via the sidebar to sell; other sidebar items and multi-cart buttons are UI placeholders for upcoming features.
+Default seeded admin (when created by older seed paths / manual setup):
+
+| Field | Value |
+|-------|--------|
+| Username | `admin` |
+| Password | `admin123` |
+
+After login, use the sidebar or dashboard shortcuts to open POS, browse placeholder screens, or open Settings.

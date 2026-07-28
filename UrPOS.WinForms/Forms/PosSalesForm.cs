@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
@@ -12,13 +13,22 @@ namespace UrPOS.WinForms.Forms
 {
     public partial class PosSalesForm : Form
     {
+        private sealed class ParkedInvoiceDraft
+        {
+            public string Title { get; set; } = string.Empty;
+            public DateTime ParkedAt { get; set; }
+            public List<SalesInvoiceItem> Items { get; set; } = new();
+        }
+
         private readonly IProductService _productService;
         private readonly IInvoiceService _invoiceService;
         private readonly BindingList<SalesInvoiceItem> _cartItems = new();
+        private readonly List<ParkedInvoiceDraft> _parkedInvoices = new();
 
         private string _qtyBuffer = "1";
         private bool _qtyBufferTouched;
         private bool _isBusy;
+        private int _draftSequence;
 
         public PosSalesForm(IProductService productService, IInvoiceService invoiceService)
         {
@@ -30,6 +40,7 @@ namespace UrPOS.WinForms.Forms
             BindCart();
             RefreshTotals();
             UpdateQtyDisplay();
+            UpdateParkedButtonText();
         }
 
         protected override void OnShown(EventArgs e)
@@ -71,26 +82,200 @@ namespace UrPOS.WinForms.Forms
 
         private void btnNewInvoice_Click(object? sender, EventArgs e)
         {
-            MessageBox.Show(
-                this,
-                "واجهة فاتورة جديدة متعددة السلال قيد التجهيز (UI فقط — بدون منطق خلفي).",
-                "+ فاتورة جديدة",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information,
-                MessageBoxDefaultButton.Button1,
-                MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+            if (_cartItems.Count == 0)
+            {
+                ShowAlert("السلة فارغة — أضف أصنافاً أولاً قبل فتح فاتورة جديدة.", isError: true);
+                return;
+            }
+
+            ParkCurrentCartAsDraft();
+            BeginFreshInvoice();
+            ShowAlert($"تم حفظ الفاتورة كمسودة. الفواتير المعلقة: {_parkedInvoices.Count}", isError: false);
+            txtBarcode.Focus();
         }
 
         private void btnParkedInvoices_Click(object? sender, EventArgs e)
         {
-            MessageBox.Show(
-                this,
-                "واجهة الفواتير المعلقة (Parked Orders) قيد التجهيز (UI فقط — بدون منطق خلفي).",
-                "الفواتير المعلقة",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information,
-                MessageBoxDefaultButton.Button1,
-                MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+            if (_parkedInvoices.Count == 0)
+            {
+                // Same rule as new invoice: if current cart has items, park it as draft
+                if (_cartItems.Count > 0)
+                {
+                    ParkCurrentCartAsDraft();
+                    BeginFreshInvoice();
+                    ShowAlert($"تم تعليق الفاتورة الحالية. الفواتير المعلقة: {_parkedInvoices.Count}", isError: false);
+                    txtBarcode.Focus();
+                    return;
+                }
+
+                ShowAlert("لا توجد فواتير معلقة حالياً.", isError: true);
+                return;
+            }
+
+            ShowParkedInvoicesPicker();
+        }
+
+        private void ParkCurrentCartAsDraft()
+        {
+            _draftSequence++;
+            var draft = new ParkedInvoiceDraft
+            {
+                Title = $"مسودة #{_draftSequence} — {_cartItems.Count} صنف",
+                ParkedAt = DateTime.Now,
+                Items = _cartItems.Select(CloneCartItem).ToList()
+            };
+            _parkedInvoices.Add(draft);
+            UpdateParkedButtonText();
+        }
+
+        private void BeginFreshInvoice()
+        {
+            _cartItems.Clear();
+            ResetQtyBuffer();
+            RefreshTotals();
+            HideAlert();
+        }
+
+        private static SalesInvoiceItem CloneCartItem(SalesInvoiceItem item)
+        {
+            return new SalesInvoiceItem
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                Barcode = item.Barcode,
+                Quantity = item.Quantity,
+                SalePrice = item.SalePrice,
+                TotalPrice = item.TotalPrice
+            };
+        }
+
+        private void UpdateParkedButtonText()
+        {
+            btnParkedInvoices.Text = $"الفواتير المعلقة ({_parkedInvoices.Count})";
+        }
+
+        private void ShowParkedInvoicesPicker()
+        {
+            using var picker = new Form
+            {
+                Text = "الفواتير المعلقة",
+                RightToLeft = RightToLeft.Yes,
+                RightToLeftLayout = true,
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ClientSize = new Size(480, 360),
+                BackColor = Color.FromArgb(241, 245, 249),
+                Font = new Font("Segoe UI", 10F)
+            };
+
+            var list = new ListBox
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 11F),
+                IntegralHeight = false,
+                RightToLeft = RightToLeft.Yes
+            };
+
+            for (var i = 0; i < _parkedInvoices.Count; i++)
+            {
+                var d = _parkedInvoices[i];
+                list.Items.Add($"{i + 1}. {d.Title} — {d.ParkedAt:HH:mm}");
+            }
+
+            if (list.Items.Count > 0)
+            {
+                list.SelectedIndex = 0;
+            }
+
+            var buttons = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 56,
+                Padding = new Padding(12)
+            };
+
+            var btnOpen = new Button
+            {
+                BackColor = Color.FromArgb(13, 148, 136),
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = Color.White,
+                Dock = DockStyle.Right,
+                Width = 140,
+                Text = "فتح المسودة",
+                DialogResult = DialogResult.OK
+            };
+            btnOpen.FlatAppearance.BorderSize = 0;
+
+            var btnCancel = new Button
+            {
+                BackColor = Color.FromArgb(100, 116, 139),
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = Color.White,
+                Dock = DockStyle.Right,
+                Width = 100,
+                Text = "إلغاء",
+                DialogResult = DialogResult.Cancel
+            };
+            btnCancel.FlatAppearance.BorderSize = 0;
+
+            var spacer = new Panel { Dock = DockStyle.Right, Width = 8 };
+            buttons.Controls.Add(btnOpen);
+            buttons.Controls.Add(spacer);
+            buttons.Controls.Add(btnCancel);
+
+            var hint = new Label
+            {
+                Dock = DockStyle.Top,
+                Height = 40,
+                Padding = new Padding(12, 8, 12, 0),
+                Text = "اختر مسودة لفتحها. إذا كانت السلة الحالية غير فارغة سيتم تعليقها أولاً.",
+                TextAlign = ContentAlignment.MiddleLeft,
+                RightToLeft = RightToLeft.Yes
+            };
+
+            picker.Controls.Add(list);
+            picker.Controls.Add(buttons);
+            picker.Controls.Add(hint);
+            picker.AcceptButton = btnOpen;
+            picker.CancelButton = btnCancel;
+
+            if (picker.ShowDialog(this) != DialogResult.OK || list.SelectedIndex < 0)
+            {
+                return;
+            }
+
+            RestoreParkedInvoice(list.SelectedIndex);
+        }
+
+        private void RestoreParkedInvoice(int index)
+        {
+            if (index < 0 || index >= _parkedInvoices.Count)
+            {
+                return;
+            }
+
+            // Same logic as new invoice: park current open cart before switching
+            if (_cartItems.Count > 0)
+            {
+                ParkCurrentCartAsDraft();
+            }
+
+            var draft = _parkedInvoices[index];
+            _parkedInvoices.RemoveAt(index);
+
+            _cartItems.Clear();
+            foreach (var item in draft.Items)
+            {
+                _cartItems.Add(CloneCartItem(item));
+            }
+
+            ResetQtyBuffer();
+            RefreshTotals();
+            UpdateParkedButtonText();
+            ShowAlert($"تم استعادة: {draft.Title}", isError: false);
+            txtBarcode.Focus();
         }
 
         private async Task SearchAndAddProductAsync()
@@ -455,11 +640,6 @@ namespace UrPOS.WinForms.Forms
         {
             lblAlert.Visible = false;
             lblAlert.Text = string.Empty;
-        }
-
-        private void dgvCart_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-
         }
     }
 }

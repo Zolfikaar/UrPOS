@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using UrPOS.Core.Entities;
 using UrPOS.Core.Interfaces;
+using UrPOS.WinForms.Controls;
 
 namespace UrPOS.WinForms.Forms
 {
@@ -12,12 +13,17 @@ namespace UrPOS.WinForms.Forms
         private readonly IAuthService _authService;
         private bool _guestCleanupCompleted;
 
+        private EmptyStateControl? _productsEmpty;
+        private EmptyStateControl? _invoicesEmpty;
+        private SettingsControl? _settingsControl;
+
         public MainForm(IServiceProvider serviceProvider, IAuthService authService)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             InitializeComponent();
             ApplySessionInfo();
+            HighlightNav(btnNavDashboard);
             FormClosing += MainForm_FormClosing;
         }
 
@@ -32,6 +38,26 @@ namespace UrPOS.WinForms.Forms
                 : string.Empty;
         }
 
+        private void ShowInContentHost(Control view)
+        {
+            pnlContentHost.SuspendLayout();
+            pnlContentHost.Controls.Clear();
+            view.Dock = DockStyle.Fill;
+            pnlContentHost.Controls.Add(view);
+            pnlContentHost.ResumeLayout(true);
+        }
+
+        private void ShowDashboard()
+        {
+            ShowInContentHost(pnlDashboard);
+            HighlightNav(btnNavDashboard);
+        }
+
+        private void btnNavDashboard_Click(object? sender, EventArgs e)
+        {
+            ShowDashboard();
+        }
+
         private void btnOpenPos_Click(object? sender, EventArgs e)
         {
             using var posForm = _serviceProvider.GetRequiredService<PosSalesForm>();
@@ -40,29 +66,46 @@ namespace UrPOS.WinForms.Forms
 
         private void btnNavProducts_Click(object? sender, EventArgs e)
         {
-            ShowUiPlaceholder("إدارة المنتجات", "شاشة إدارة المنتجات قيد التجهيز (واجهة فقط).");
+            _productsEmpty ??= new EmptyStateControl(
+                "إدارة المنتجات",
+                "هذه الصفحة قيد التجهيز / لا توجد بيانات للعرض حالياً.\r\nستتمكن قريباً من إضافة وتعديل المنتجات من هنا.");
+            ShowInContentHost(_productsEmpty);
+            HighlightNav(btnNavProducts);
         }
 
         private void btnNavInvoices_Click(object? sender, EventArgs e)
         {
-            ShowUiPlaceholder("سجل الفواتير", "شاشة سجل الفواتير قيد التجهيز (واجهة فقط).");
+            _invoicesEmpty ??= new EmptyStateControl(
+                "سجل الفواتير",
+                "هذه الصفحة قيد التجهيز / لا توجد بيانات للعرض حالياً.\r\nسيظهر هنا سجل فواتير المبيعات والمشتريات.");
+            ShowInContentHost(_invoicesEmpty);
+            HighlightNav(btnNavInvoices);
         }
 
         private void btnNavSettings_Click(object? sender, EventArgs e)
         {
-            ShowUiPlaceholder("الإعدادات والأمان", "شاشة الإعدادات والأمان قيد التجهيز (واجهة فقط).");
+            _settingsControl ??= new SettingsControl();
+            ShowInContentHost(_settingsControl);
+            HighlightNav(btnNavSettings);
         }
 
-        private void ShowUiPlaceholder(string title, string message)
+        private void btnQuickBackup_Click(object? sender, EventArgs e)
         {
-            MessageBox.Show(
-                this,
-                message,
-                title,
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information,
-                MessageBoxDefaultButton.Button1,
-                MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+            _settingsControl ??= new SettingsControl();
+            _settingsControl.ShowBackupTab();
+            ShowInContentHost(_settingsControl);
+            HighlightNav(btnNavSettings);
+        }
+
+        private void HighlightNav(Button active)
+        {
+            var idle = Color.FromArgb(51, 65, 85);
+            var accent = Color.FromArgb(13, 148, 136);
+
+            foreach (var btn in new[] { btnNavDashboard, btnNavPos, btnNavProducts, btnNavInvoices, btnNavSettings })
+            {
+                btn.BackColor = ReferenceEquals(btn, active) ? accent : idle;
+            }
         }
 
         private async void btnLogout_Click(object sender, EventArgs e)
@@ -102,7 +145,6 @@ namespace UrPOS.WinForms.Forms
                 return;
             }
 
-            // إلغاء الإغلاق مؤقتاً حتى يكتمل حذف سجل الضيف من PostgreSQL
             e.Cancel = true;
             _guestCleanupCompleted = true;
 
@@ -122,7 +164,6 @@ namespace UrPOS.WinForms.Forms
                     MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
             }
 
-            // أعد الإغلاق بعد اكتمال التنظيف (DialogResult يبقى كما هو — Retry من Logout أو None عند X)
             BeginInvoke(new Action(Close));
         }
     }
