@@ -317,7 +317,7 @@ namespace UrPOS.WinForms.Forms
             btnQuickPos.Click += btnOpenPos_Click;
 
             btnQuickAddProduct = CreateQuickButton("btnQuickAddProduct", "إضافة منتج جديد", Color.FromArgb(37, 99, 235));
-            btnQuickAddProduct.Click += btnNavProducts_Click;
+            btnQuickAddProduct.Click += btnQuickAddProduct_Click;
 
             btnQuickBackup = CreateQuickButton("btnQuickBackup", "النسخ الاحتياطي", Color.FromArgb(51, 65, 85));
             btnQuickBackup.Click += btnQuickBackup_Click;

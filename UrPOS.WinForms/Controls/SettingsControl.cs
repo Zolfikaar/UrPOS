@@ -12,6 +12,7 @@ namespace UrPOS.WinForms.Controls
 
         public SettingsControl()
         {
+            AutoScaleMode = AutoScaleMode.None;
             RightToLeft = RightToLeft.Yes;
             BackColor = Color.FromArgb(241, 245, 249);
             Dock = DockStyle.Fill;

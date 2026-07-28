@@ -7,6 +7,7 @@ using UrPOS.Infrastructure.Repositories;
 using UrPOS.Infrastructure.Security;
 using UrPOS.Infrastructure.Services;
 using UrPOS.WinForms;
+using UrPOS.WinForms.Controls;
 using UrPOS.WinForms.Forms;
 
 namespace UrPOS.Presentation
@@ -44,6 +45,7 @@ namespace UrPOS.Presentation
                     services.AddTransient<MainForm>();
                     services.AddTransient<PosSalesForm>();
                     services.AddTransient<SetupForm>();
+                    services.AddTransient<ProductsControl>();
                 });
         }
     }

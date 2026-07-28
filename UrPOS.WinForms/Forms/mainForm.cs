@@ -13,7 +13,7 @@ namespace UrPOS.WinForms.Forms
         private readonly IAuthService _authService;
         private bool _guestCleanupCompleted;
 
-        private EmptyStateControl? _productsEmpty;
+        private ProductsControl? _productsControl;
         private EmptyStateControl? _invoicesEmpty;
         private SettingsControl? _settingsControl;
 
@@ -40,10 +40,22 @@ namespace UrPOS.WinForms.Forms
 
         private void ShowInContentHost(Control view)
         {
+            // Never Clear()/re-parent views: that re-runs AutoScale and collapses
+            // Dock.Top sidebar buttons and content until the shell looks empty.
             pnlContentHost.SuspendLayout();
-            pnlContentHost.Controls.Clear();
-            view.Dock = DockStyle.Fill;
-            pnlContentHost.Controls.Add(view);
+
+            if (!pnlContentHost.Controls.Contains(view))
+            {
+                view.Dock = DockStyle.Fill;
+                pnlContentHost.Controls.Add(view);
+            }
+
+            foreach (Control child in pnlContentHost.Controls)
+            {
+                child.Visible = ReferenceEquals(child, view);
+            }
+
+            view.BringToFront();
             pnlContentHost.ResumeLayout(true);
         }
 
@@ -66,11 +78,22 @@ namespace UrPOS.WinForms.Forms
 
         private void btnNavProducts_Click(object? sender, EventArgs e)
         {
-            _productsEmpty ??= new EmptyStateControl(
-                "إدارة المنتجات",
-                "هذه الصفحة قيد التجهيز / لا توجد بيانات للعرض حالياً.\r\nستتمكن قريباً من إضافة وتعديل المنتجات من هنا.");
-            ShowInContentHost(_productsEmpty);
+            EnsureProductsControl();
+            ShowInContentHost(_productsControl!);
             HighlightNav(btnNavProducts);
+        }
+
+        private void btnQuickAddProduct_Click(object? sender, EventArgs e)
+        {
+            EnsureProductsControl();
+            ShowInContentHost(_productsControl!);
+            HighlightNav(btnNavProducts);
+            _productsControl!.OpenAddProductForm();
+        }
+
+        private void EnsureProductsControl()
+        {
+            _productsControl ??= _serviceProvider.GetRequiredService<ProductsControl>();
         }
 
         private void btnNavInvoices_Click(object? sender, EventArgs e)
