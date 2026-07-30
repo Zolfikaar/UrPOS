@@ -30,8 +30,9 @@ namespace UrPOS.Infrastructure.Repositories
             try
             {
                 const string insertInvoiceQuery = @"
-                INSERT INTO seles_invoices (invoice_number, user_id, total_amount, discount, net_amount, payment_type)
-                VALUES (@InvoiceNumber, @UserId, @TotalAmount, @Discount, @NetAmount, @PaymentType);";
+                INSERT INTO sales_invoices (invoice_number, user_id, total_amount, discount, net_amount, payment_type)
+                VALUES (@InvoiceNumber, @UserId, @TotalAmount, @Discount, @NetAmount, @PaymentType)
+                RETURNING id;";
 
                 var invoiceId = await connection.ExecuteScalarAsync<long>(insertInvoiceQuery, invoice, transaction);
 

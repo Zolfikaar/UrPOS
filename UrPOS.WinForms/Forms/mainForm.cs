@@ -70,25 +70,33 @@ namespace UrPOS.WinForms.Forms
             ShowDashboard();
         }
 
-        private void btnOpenPos_Click(object? sender, EventArgs e)
+        private async void btnOpenPos_Click(object? sender, EventArgs e)
         {
             using var posForm = _serviceProvider.GetRequiredService<PosSalesForm>();
             posForm.ShowDialog(this);
+
+            // POS sales change stock in the DB — refresh the cached products grid.
+            if (_productsControl is not null)
+            {
+                await _productsControl.ReloadProductsAsync();
+            }
         }
 
-        private void btnNavProducts_Click(object? sender, EventArgs e)
+        private async void btnNavProducts_Click(object? sender, EventArgs e)
         {
             EnsureProductsControl();
             ShowInContentHost(_productsControl!);
             HighlightNav(btnNavProducts);
+            await _productsControl!.ReloadProductsAsync();
         }
 
-        private void btnQuickAddProduct_Click(object? sender, EventArgs e)
+        private async void btnQuickAddProduct_Click(object? sender, EventArgs e)
         {
             EnsureProductsControl();
             ShowInContentHost(_productsControl!);
             HighlightNav(btnNavProducts);
-            _productsControl!.OpenAddProductForm();
+            await _productsControl!.ReloadProductsAsync();
+            _productsControl.OpenAddProductForm();
         }
 
         private void EnsureProductsControl()
@@ -156,6 +164,7 @@ namespace UrPOS.WinForms.Forms
                 _authService.Logout();
             }
 
+            ParkedInvoiceSession.Instance.Clear();
             _guestCleanupCompleted = true;
             DialogResult = DialogResult.Retry;
             Close();

@@ -13,22 +13,14 @@ namespace UrPOS.WinForms.Forms
 {
     public partial class PosSalesForm : Form
     {
-        private sealed class ParkedInvoiceDraft
-        {
-            public string Title { get; set; } = string.Empty;
-            public DateTime ParkedAt { get; set; }
-            public List<SalesInvoiceItem> Items { get; set; } = new();
-        }
-
         private readonly IProductService _productService;
         private readonly IInvoiceService _invoiceService;
         private readonly BindingList<SalesInvoiceItem> _cartItems = new();
-        private readonly List<ParkedInvoiceDraft> _parkedInvoices = new();
+        private readonly ParkedInvoiceSession _parkedSession = ParkedInvoiceSession.Instance;
 
         private string _qtyBuffer = "1";
         private bool _qtyBufferTouched;
         private bool _isBusy;
-        private int _draftSequence;
 
         public PosSalesForm(IProductService productService, IInvoiceService invoiceService)
         {
@@ -36,11 +28,29 @@ namespace UrPOS.WinForms.Forms
             _invoiceService = invoiceService ?? throw new ArgumentNullException(nameof(invoiceService));
 
             InitializeComponent();
-            WireNumpad();
+            BuildNumpad();
             BindCart();
             RefreshTotals();
             UpdateQtyDisplay();
             UpdateParkedButtonText();
+            FormClosing += PosSalesForm_FormClosing;
+        }
+
+        private void PosSalesForm_Load(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Keep ~360px for numpad side (RTL + maximize)
+                var target = Math.Max(360, splitMain.Width - 880);
+                if (splitMain.Width > 700)
+                {
+                    splitMain.SplitterDistance = Math.Max(500, splitMain.Width - target);
+                }
+            }
+            catch
+            {
+                // Ignore invalid splitter distance during early layout
+            }
         }
 
         protected override void OnShown(EventArgs e)
@@ -52,18 +62,120 @@ namespace UrPOS.WinForms.Forms
         private void BindCart()
         {
             dgvCart.AutoGenerateColumns = false;
+
+            // Columns are built here (not in the Designer) so Visual Studio
+            // regenerations cannot wipe DataPropertyName bindings again.
+            if (dgvCart.Columns.Count == 0)
+            {
+                var priceStyle = new DataGridViewCellStyle
+                {
+                    Alignment = DataGridViewContentAlignment.MiddleCenter,
+                    Format = "N2"
+                };
+
+                dgvCart.Columns.AddRange(
+                    new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = nameof(SalesInvoiceItem.ProductName),
+                        FillWeight = 42F,
+                        HeaderText = "اسم المنتج",
+                        MinimumWidth = 120,
+                        Name = "colProduct",
+                        ReadOnly = true
+                    },
+                    new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = nameof(SalesInvoiceItem.Quantity),
+                        FillWeight = 16F,
+                        HeaderText = "الكمية",
+                        MinimumWidth = 70,
+                        Name = "colQty",
+                        ReadOnly = true
+                    },
+                    new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = nameof(SalesInvoiceItem.SalePrice),
+                        DefaultCellStyle = priceStyle,
+                        FillWeight = 20F,
+                        HeaderText = "السعر المفرد",
+                        MinimumWidth = 90,
+                        Name = "colUnitPrice",
+                        ReadOnly = true
+                    },
+                    new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = nameof(SalesInvoiceItem.TotalPrice),
+                        DefaultCellStyle = priceStyle,
+                        FillWeight = 22F,
+                        HeaderText = "الإجمالي",
+                        MinimumWidth = 90,
+                        Name = "colTotal",
+                        ReadOnly = true
+                    });
+            }
+
             dgvCart.DataSource = _cartItems;
         }
 
-        private void WireNumpad()
+        private void BuildNumpad()
         {
-            foreach (Control control in tblNumpad.Controls)
+            tblNumpad.SuspendLayout();
+            tblNumpad.Controls.Clear();
+
+            AddNumpadButton("7", 0, 0);
+            AddNumpadButton("8", 1, 0);
+            AddNumpadButton("9", 2, 0);
+            AddNumpadButton("4", 0, 1);
+            AddNumpadButton("5", 1, 1);
+            AddNumpadButton("6", 2, 1);
+            AddNumpadButton("1", 0, 2);
+            AddNumpadButton("2", 1, 2);
+            AddNumpadButton("3", 2, 2);
+            AddNumpadButton("C", 0, 3, Color.FromArgb(245, 158, 11));
+            AddNumpadButton("0", 1, 3);
+            AddNumpadButton("BS", 2, 3, Color.FromArgb(100, 116, 139), "⌫");
+            AddNumpadButton("+", 0, 4, Color.FromArgb(13, 148, 136), "+ كمية");
+            AddNumpadButton("-", 1, 4, Color.FromArgb(239, 68, 68), "- كمية");
+            AddNumpadButton("OK", 2, 4, Color.FromArgb(37, 99, 235), "إضافة");
+
+            tblNumpad.ResumeLayout(true);
+        }
+
+        private void AddNumpadButton(string tag, int column, int row)
+        {
+            AddNumpadButton(tag, column, row, Color.FromArgb(241, 245, 249), tag, colored: false);
+        }
+
+        private void AddNumpadButton(string tag, int column, int row, Color backColor)
+        {
+            AddNumpadButton(tag, column, row, backColor, tag, colored: true);
+        }
+
+        private void AddNumpadButton(string tag, int column, int row, Color backColor, string text)
+        {
+            AddNumpadButton(tag, column, row, backColor, text, colored: true);
+        }
+
+        private void AddNumpadButton(string tag, int column, int row, Color backColor, string text, bool colored)
+        {
+            var button = new Button
             {
-                if (control is Button button && button.Tag is string tag)
-                {
-                    button.Click += NumpadButton_Click;
-                }
-            }
+                BackColor = backColor,
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Fill,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI Semibold", 14F, FontStyle.Bold),
+                ForeColor = colored ? Color.White : Color.FromArgb(30, 41, 59),
+                Margin = new Padding(4),
+                Name = $"btnNum_{tag}_{column}_{row}",
+                Tag = tag,
+                Text = text,
+                UseVisualStyleBackColor = false
+            };
+            button.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
+            button.FlatAppearance.BorderSize = colored ? 0 : 1;
+            button.Click += NumpadButton_Click;
+            tblNumpad.Controls.Add(button, column, row);
         }
 
         private async void txtBarcode_KeyDown(object? sender, KeyEventArgs e)
@@ -90,20 +202,20 @@ namespace UrPOS.WinForms.Forms
 
             ParkCurrentCartAsDraft();
             BeginFreshInvoice();
-            ShowAlert($"تم حفظ الفاتورة كمسودة. الفواتير المعلقة: {_parkedInvoices.Count}", isError: false);
+            ShowAlert($"تم حفظ الفاتورة كمسودة. الفواتير المعلقة: {_parkedSession.Count}", isError: false);
             txtBarcode.Focus();
         }
 
         private void btnParkedInvoices_Click(object? sender, EventArgs e)
         {
-            if (_parkedInvoices.Count == 0)
+            if (_parkedSession.Count == 0)
             {
                 // Same rule as new invoice: if current cart has items, park it as draft
                 if (_cartItems.Count > 0)
                 {
                     ParkCurrentCartAsDraft();
                     BeginFreshInvoice();
-                    ShowAlert($"تم تعليق الفاتورة الحالية. الفواتير المعلقة: {_parkedInvoices.Count}", isError: false);
+                    ShowAlert($"تم تعليق الفاتورة الحالية. الفواتير المعلقة: {_parkedSession.Count}", isError: false);
                     txtBarcode.Focus();
                     return;
                 }
@@ -117,14 +229,12 @@ namespace UrPOS.WinForms.Forms
 
         private void ParkCurrentCartAsDraft()
         {
-            _draftSequence++;
-            var draft = new ParkedInvoiceDraft
+            if (_cartItems.Count == 0)
             {
-                Title = $"مسودة #{_draftSequence} — {_cartItems.Count} صنف",
-                ParkedAt = DateTime.Now,
-                Items = _cartItems.Select(CloneCartItem).ToList()
-            };
-            _parkedInvoices.Add(draft);
+                return;
+            }
+
+            _parkedSession.Park(_cartItems);
             UpdateParkedButtonText();
         }
 
@@ -151,11 +261,24 @@ namespace UrPOS.WinForms.Forms
 
         private void UpdateParkedButtonText()
         {
-            btnParkedInvoices.Text = $"الفواتير المعلقة ({_parkedInvoices.Count})";
+            btnParkedInvoices.Text = $"الفواتير المعلقة ({_parkedSession.Count})";
+        }
+
+        private void PosSalesForm_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            if (_cartItems.Count == 0)
+            {
+                return;
+            }
+
+            // Leaving POS with items in the cart → auto-park; empty cart → nothing.
+            ParkCurrentCartAsDraft();
+            _cartItems.Clear();
         }
 
         private void ShowParkedInvoicesPicker()
         {
+            var parked = _parkedSession.Drafts;
             using var picker = new Form
             {
                 Text = "الفواتير المعلقة",
@@ -178,9 +301,9 @@ namespace UrPOS.WinForms.Forms
                 RightToLeft = RightToLeft.Yes
             };
 
-            for (var i = 0; i < _parkedInvoices.Count; i++)
+            for (var i = 0; i < parked.Count; i++)
             {
-                var d = _parkedInvoices[i];
+                var d = parked[i];
                 list.Items.Add($"{i + 1}. {d.Title} — {d.ParkedAt:HH:mm}");
             }
 
@@ -251,19 +374,17 @@ namespace UrPOS.WinForms.Forms
 
         private void RestoreParkedInvoice(int index)
         {
-            if (index < 0 || index >= _parkedInvoices.Count)
-            {
-                return;
-            }
-
             // Same logic as new invoice: park current open cart before switching
             if (_cartItems.Count > 0)
             {
                 ParkCurrentCartAsDraft();
             }
 
-            var draft = _parkedInvoices[index];
-            _parkedInvoices.RemoveAt(index);
+            var draft = _parkedSession.Take(index);
+            if (draft is null)
+            {
+                return;
+            }
 
             _cartItems.Clear();
             foreach (var item in draft.Items)
@@ -341,6 +462,8 @@ namespace UrPOS.WinForms.Forms
                     return;
                 }
 
+
+
                 AddOrIncrementCartItem(product, qty);
                 txtBarcode.Clear();
                 ResetQtyBuffer();
@@ -348,9 +471,9 @@ namespace UrPOS.WinForms.Forms
                 RefreshTotals();
                 txtBarcode.Focus();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                ShowAlert("تعذر البحث عن المنتج. حاول مرة أخرى.", isError: true);
+                ShowAlert($"تعذر البحث عن المنتج: {ex.Message}", isError: true);
             }
             finally
             {
@@ -575,9 +698,9 @@ namespace UrPOS.WinForms.Forms
                 txtBarcode.Clear();
                 txtBarcode.Focus();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                ShowAlert("حدث خطأ أثناء إتمام البيع. حاول مرة أخرى.", isError: true);
+                ShowAlert($"حدث خطأ أثناء إتمام البيع: {ex.Message}", isError: true);
             }
             finally
             {

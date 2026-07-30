@@ -295,6 +295,7 @@ namespace UrPOS.WinForms.Controls
 
             _dgvProducts = BuildProductsGrid();
             _dgvProducts.CellContentClick += DgvProducts_CellContentClick;
+            _dgvProducts.CellFormatting += DgvProducts_CellFormatting;
             pnlGridCard.Controls.Add(_dgvProducts);
 
             var spTop = new Panel
@@ -586,6 +587,30 @@ namespace UrPOS.WinForms.Controls
             _lblPageInfo.Text = $"صفحة {_currentPage} من {totalPages}";
             _btnPrevPage.Enabled = _currentPage > 1;
             _btnNextPage.Enabled = _currentPage < totalPages;
+        }
+
+        private void DgvProducts_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0)
+            {
+                return;
+            }
+
+            if (_dgvProducts.Rows[e.RowIndex].DataBoundItem is not ProductListItem item)
+            {
+                return;
+            }
+
+            if (item.CurrentStock > item.MinStockLevel)
+            {
+                return;
+            }
+
+            // Soft red for low-stock rows (stock at or below warning level).
+            e.CellStyle.BackColor = Color.FromArgb(254, 226, 226);
+            e.CellStyle.ForeColor = Color.FromArgb(153, 27, 27);
+            e.CellStyle.SelectionBackColor = Color.FromArgb(252, 165, 165);
+            e.CellStyle.SelectionForeColor = Color.FromArgb(127, 29, 29);
         }
 
         private void DgvProducts_CellContentClick(object? sender, DataGridViewCellEventArgs e)
