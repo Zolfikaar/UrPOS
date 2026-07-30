@@ -10,8 +10,12 @@ namespace UrPOS.WinForms
 {
     internal static class Program
     {
+        /// <summary>
+        /// Must remain synchronous. <c>async Task Main</c> resumes after awaits on an MTA
+        /// thread-pool thread, which breaks OLE dialogs (SaveFileDialog / OpenFileDialog).
+        /// </summary>
         [STAThread]
-        static async Task Main()
+        static void Main()
         {
             // تفعيل مطابقة أسماء الأعمدة ذات الـ underscore تلقائياً مع C# PascalCase
             Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
@@ -24,7 +28,7 @@ namespace UrPOS.WinForms
             using (var scope = host.Services.CreateScope())
             {
                 var dbInitializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
-                await dbInitializer.InitializeDatabaseAsync();
+                dbInitializer.InitializeDatabaseAsync().GetAwaiter().GetResult();
             }
 
             // 2. فحص هل يوجد أي مستخدم بالداتابيس؟ (يحدد فقط إن كان SetupForm مطلوباً)
@@ -32,7 +36,7 @@ namespace UrPOS.WinForms
             using (var scope = host.Services.CreateScope())
             {
                 var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-                hasUsers = await userRepo.HasAnyUsersAsync();
+                hasUsers = userRepo.HasAnyUsersAsync().GetAwaiter().GetResult();
             }
 
             // 3. إذا لم يوجد مستخدمين، نفتح واجهة الإعداد لأول مرة (SetupForm)

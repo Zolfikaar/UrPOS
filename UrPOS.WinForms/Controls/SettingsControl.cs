@@ -1,17 +1,21 @@
 using System.Drawing;
 using System.Windows.Forms;
+using UrPOS.Core.Interfaces;
 
 namespace UrPOS.WinForms.Controls
 {
     /// <summary>
-    /// Settings page UI with Arabic RTL tabs (visual placeholders — no backend wiring).
+    /// Settings page UI with Arabic RTL tabs, including encrypted database backup/restore.
     /// </summary>
     public class SettingsControl : UserControl
     {
         private readonly TabControl _tabs;
+        private readonly IBackupService _backupService;
 
-        public SettingsControl()
+        public SettingsControl(IBackupService backupService)
         {
+            _backupService = backupService;
+
             AutoScaleMode = AutoScaleMode.None;
             RightToLeft = RightToLeft.Yes;
             BackColor = Color.FromArgb(241, 245, 249);
@@ -34,7 +38,7 @@ namespace UrPOS.WinForms.Controls
                 Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(100, 116, 139),
                 Height = 28,
-                Text = "واجهة إعدادات مركزية — الحقول أدناه جاهزة بصرياً للتوصيل لاحقاً.",
+                Text = "إدارة بيانات المتجر، النسخ الاحتياطي المشفر، وتفضيلات النظام.",
                 TextAlign = ContentAlignment.MiddleRight
             };
 
@@ -82,14 +86,14 @@ namespace UrPOS.WinForms.Controls
             return page;
         }
 
-        private static TabPage BuildBackupSecurityTab()
+        private TabPage BuildBackupSecurityTab()
         {
             var page = CreateTabPage("tabBackup", "النسخ الاحتياطي والأمان");
             var flow = CreateFlowBody();
 
             flow.Controls.Add(CreatePlaceholderNote(
                 "نسخ احتياطي واستعادة قاعدة البيانات",
-                "أزرار واجهة فقط — منطق النسخ الاحتياطي سيُربط لاحقاً بـ PostgreSQL."));
+                "إنشاء نسخة احتياطية مشفرة بـ AES-256 أو استعادة ملف .upbak. تأكد من تثبيت أدوات PostgreSQL (pg_dump / psql)."));
 
             var row = new FlowLayoutPanel
             {
@@ -98,13 +102,22 @@ namespace UrPOS.WinForms.Controls
                 Margin = new Padding(0, 8, 0, 8),
                 RightToLeft = RightToLeft.Yes,
                 WrapContents = false,
-                Width = 640
+                Width = 720
             };
-            row.Controls.Add(CreateActionButton("إنشاء نسخة احتياطية", Color.FromArgb(13, 148, 136)));
-            row.Controls.Add(CreateActionButton("استعادة من ملف", Color.FromArgb(51, 65, 85)));
+
+            var btnBackup = CreateActionButton("إنشاء نسخة احتياطية مشفرة", Color.FromArgb(13, 148, 136));
+            btnBackup.MinimumSize = new Size(220, 40);
+            btnBackup.Click += async (_, _) => await CreateEncryptedBackupAsync();
+
+            var btnRestore = CreateActionButton("استعادة نسخة احتياطية", Color.FromArgb(51, 65, 85));
+            btnRestore.MinimumSize = new Size(200, 40);
+            btnRestore.Click += async (_, _) => await RestoreEncryptedBackupAsync();
+
+            row.Controls.Add(btnBackup);
+            row.Controls.Add(btnRestore);
 
             flow.Controls.Add(row);
-            flow.Controls.Add(CreateLabeledField("مسار النسخ الاحتياطي", @"C:\UrPOS\Backups"));
+            flow.Controls.Add(CreateLabeledField("امتداد الملف", "*.upbak"));
 
             page.Controls.Add(flow);
             return page;
@@ -124,6 +137,233 @@ namespace UrPOS.WinForms.Controls
 
             page.Controls.Add(flow);
             return page;
+        }
+
+        private async Task CreateEncryptedBackupAsync()
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Title = "حفظ النسخة الاحتياطية المشفرة",
+                Filter = "نسخة احتياطية مشفرة (*.upbak)|*.upbak",
+                DefaultExt = "upbak",
+                AddExtension = true,
+                FileName = $"UrPOS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.upbak",
+                OverwritePrompt = true
+            };
+
+            if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
+            {
+                return;
+            }
+
+            if (!TryPromptPassword("كلمة مرور التشفير", "أدخل كلمة مرور لتشفير النسخة الاحتياطية:", out var encryptionKey)
+                || string.IsNullOrWhiteSpace(encryptionKey))
+            {
+                MessageBox.Show(
+                    "يجب إدخال كلمة مرور للتشفير.",
+                    "تنبيه",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button1,
+                    MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                return;
+            }
+
+            UseWaitCursor = true;
+            Enabled = false;
+            try
+            {
+                var result = await _backupService.CreateEncryptedBackupAsync(dialog.FileName, encryptionKey);
+                if (result.isSuccess)
+                {
+                    MessageBox.Show(
+                        "تم إنشاء النسخة الاحتياطية المشفرة بنجاح.",
+                        "نجاح",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information,
+                        MessageBoxDefaultButton.Button1,
+                        MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        string.IsNullOrWhiteSpace(result.ErrorMessage)
+                            ? "فشل إنشاء النسخة الاحتياطية."
+                            : result.ErrorMessage,
+                        "خطأ",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error,
+                        MessageBoxDefaultButton.Button1,
+                        MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                }
+            }
+            finally
+            {
+                Enabled = true;
+                UseWaitCursor = false;
+            }
+        }
+
+        private async Task RestoreEncryptedBackupAsync()
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Title = "اختيار ملف النسخة الاحتياطية",
+                Filter = "نسخة احتياطية مشفرة (*.upbak)|*.upbak",
+                DefaultExt = "upbak",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
+            {
+                return;
+            }
+
+            if (!TryPromptPassword("كلمة مرور فك التشفير", "أدخل كلمة المرور المستخدمة عند إنشاء النسخة الاحتياطية:", out var encryptionKey)
+                || string.IsNullOrWhiteSpace(encryptionKey))
+            {
+                MessageBox.Show(
+                    "يجب إدخال كلمة مرور فك التشفير.",
+                    "تنبيه",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button1,
+                    MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                return;
+            }
+
+            var confirm = MessageBox.Show(
+                "تحذير: سيتم استبدال البيانات الحالية بالكامل، هل تريد الاستمرار؟",
+                "تأكيد الاستعادة",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2,
+                MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+
+            if (confirm != DialogResult.Yes)
+            {
+                return;
+            }
+
+            UseWaitCursor = true;
+            Enabled = false;
+            try
+            {
+                var result = await _backupService.RestoreEncryptedBackupAsync(dialog.FileName, encryptionKey);
+                if (result.isSuccess)
+                {
+                    MessageBox.Show(
+                        "تمت استعادة النسخة الاحتياطية بنجاح. يُفضل إعادة تشغيل التطبيق.",
+                        "نجاح",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information,
+                        MessageBoxDefaultButton.Button1,
+                        MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        string.IsNullOrWhiteSpace(result.ErrorMessage)
+                            ? "فشلت الاستعادة."
+                            : result.ErrorMessage,
+                        "خطأ",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error,
+                        MessageBoxDefaultButton.Button1,
+                        MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                }
+            }
+            finally
+            {
+                Enabled = true;
+                UseWaitCursor = false;
+            }
+        }
+
+        private bool TryPromptPassword(string title, string prompt, out string password)
+        {
+            password = string.Empty;
+
+            using var form = new Form
+            {
+                Text = title,
+                RightToLeft = RightToLeft.Yes,
+                RightToLeftLayout = true,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                StartPosition = FormStartPosition.CenterParent,
+                MinimizeBox = false,
+                MaximizeBox = false,
+                ShowInTaskbar = false,
+                ClientSize = new Size(420, 160),
+                Font = new Font("Segoe UI", 10F)
+            };
+
+            var lbl = new Label
+            {
+                Text = prompt,
+                Dock = DockStyle.Top,
+                Height = 40,
+                Padding = new Padding(12, 12, 12, 0),
+                TextAlign = ContentAlignment.MiddleRight
+            };
+
+            var txt = new TextBox
+            {
+                PasswordChar = '●',
+                Dock = DockStyle.Top,
+                Margin = new Padding(12),
+                Height = 28
+            };
+            var txtHost = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 44,
+                Padding = new Padding(16, 8, 16, 8)
+            };
+            txtHost.Controls.Add(txt);
+            txt.Dock = DockStyle.Fill;
+
+            var buttons = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Bottom,
+                FlowDirection = FlowDirection.LeftToRight,
+                Height = 48,
+                Padding = new Padding(12, 8, 12, 8),
+                RightToLeft = RightToLeft.Yes
+            };
+
+            var btnOk = new Button
+            {
+                Text = "موافق",
+                DialogResult = DialogResult.OK,
+                Width = 90,
+                Height = 32
+            };
+            var btnCancel = new Button
+            {
+                Text = "إلغاء",
+                DialogResult = DialogResult.Cancel,
+                Width = 90,
+                Height = 32
+            };
+
+            buttons.Controls.Add(btnCancel);
+            buttons.Controls.Add(btnOk);
+
+            form.Controls.Add(buttons);
+            form.Controls.Add(txtHost);
+            form.Controls.Add(lbl);
+            form.AcceptButton = btnOk;
+            form.CancelButton = btnCancel;
+
+            if (form.ShowDialog(FindForm()) != DialogResult.OK)
+            {
+                return false;
+            }
+
+            password = txt.Text;
+            return true;
         }
 
         private static TabPage CreateTabPage(string name, string text)

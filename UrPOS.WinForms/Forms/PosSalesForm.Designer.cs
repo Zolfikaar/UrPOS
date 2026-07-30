@@ -107,7 +107,7 @@ namespace UrPOS.WinForms.Forms
             splitMain.Panel2.Controls.Add(pnlRight);
             splitMain.Panel2.RightToLeft = RightToLeft.Yes;
             splitMain.Size = new Size(1280, 800);
-            splitMain.SplitterDistance = 804;
+            splitMain.SplitterDistance = 748;
             splitMain.SplitterWidth = 8;
             splitMain.TabIndex = 0;
             // 
@@ -124,7 +124,7 @@ namespace UrPOS.WinForms.Forms
             pnlLeft.Name = "pnlLeft";
             pnlLeft.Padding = new Padding(16);
             pnlLeft.RightToLeft = RightToLeft.Yes;
-            pnlLeft.Size = new Size(804, 800);
+            pnlLeft.Size = new Size(748, 800);
             pnlLeft.TabIndex = 0;
             // 
             // dgvCart
@@ -166,7 +166,7 @@ namespace UrPOS.WinForms.Forms
             dgvCart.RowHeadersWidth = 51;
             dgvCart.RowTemplate.Height = 40;
             dgvCart.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCart.Size = new Size(772, 580);
+            dgvCart.Size = new Size(716, 580);
             dgvCart.TabIndex = 0;
             // 
             // pnlCartActions
@@ -178,7 +178,7 @@ namespace UrPOS.WinForms.Forms
             pnlCartActions.Location = new Point(16, 728);
             pnlCartActions.Name = "pnlCartActions";
             pnlCartActions.Padding = new Padding(0, 8, 0, 0);
-            pnlCartActions.Size = new Size(772, 56);
+            pnlCartActions.Size = new Size(716, 56);
             pnlCartActions.TabIndex = 1;
             // 
             // btnRemoveItem
@@ -190,7 +190,7 @@ namespace UrPOS.WinForms.Forms
             btnRemoveItem.FlatStyle = FlatStyle.Flat;
             btnRemoveItem.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             btnRemoveItem.ForeColor = Color.White;
-            btnRemoveItem.Location = new Point(484, 8);
+            btnRemoveItem.Location = new Point(428, 8);
             btnRemoveItem.Name = "btnRemoveItem";
             btnRemoveItem.Size = new Size(140, 48);
             btnRemoveItem.TabIndex = 0;
@@ -201,7 +201,7 @@ namespace UrPOS.WinForms.Forms
             // cartBtnSpacer
             // 
             cartBtnSpacer.Dock = DockStyle.Right;
-            cartBtnSpacer.Location = new Point(624, 8);
+            cartBtnSpacer.Location = new Point(568, 8);
             cartBtnSpacer.Name = "cartBtnSpacer";
             cartBtnSpacer.Size = new Size(8, 48);
             cartBtnSpacer.TabIndex = 1;
@@ -215,7 +215,7 @@ namespace UrPOS.WinForms.Forms
             btnClearCart.FlatStyle = FlatStyle.Flat;
             btnClearCart.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             btnClearCart.ForeColor = Color.White;
-            btnClearCart.Location = new Point(632, 8);
+            btnClearCart.Location = new Point(576, 8);
             btnClearCart.Name = "btnClearCart";
             btnClearCart.Size = new Size(140, 48);
             btnClearCart.TabIndex = 2;
@@ -230,7 +230,7 @@ namespace UrPOS.WinForms.Forms
             lblAlert.Location = new Point(16, 108);
             lblAlert.Name = "lblAlert";
             lblAlert.Padding = new Padding(10, 8, 10, 8);
-            lblAlert.Size = new Size(772, 40);
+            lblAlert.Size = new Size(716, 40);
             lblAlert.TabIndex = 2;
             lblAlert.TextAlign = ContentAlignment.MiddleCenter;
             lblAlert.Visible = false;
@@ -242,7 +242,7 @@ namespace UrPOS.WinForms.Forms
             lblCartTitle.ForeColor = Color.FromArgb(15, 23, 42);
             lblCartTitle.Location = new Point(16, 68);
             lblCartTitle.Name = "lblCartTitle";
-            lblCartTitle.Size = new Size(772, 40);
+            lblCartTitle.Size = new Size(716, 40);
             lblCartTitle.TabIndex = 3;
             lblCartTitle.Text = "سلة المبيعات الحالية";
             lblCartTitle.TextAlign = ContentAlignment.MiddleLeft;
@@ -257,7 +257,7 @@ namespace UrPOS.WinForms.Forms
             pnlMultiCart.Name = "pnlMultiCart";
             pnlMultiCart.Padding = new Padding(0, 0, 0, 8);
             pnlMultiCart.RightToLeft = RightToLeft.Yes;
-            pnlMultiCart.Size = new Size(772, 52);
+            pnlMultiCart.Size = new Size(716, 52);
             pnlMultiCart.TabIndex = 4;
             // 
             // btnParkedInvoices
@@ -269,7 +269,7 @@ namespace UrPOS.WinForms.Forms
             btnParkedInvoices.FlatStyle = FlatStyle.Flat;
             btnParkedInvoices.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             btnParkedInvoices.ForeColor = Color.White;
-            btnParkedInvoices.Location = new Point(424, 0);
+            btnParkedInvoices.Location = new Point(368, 0);
             btnParkedInvoices.Name = "btnParkedInvoices";
             btnParkedInvoices.Size = new Size(180, 44);
             btnParkedInvoices.TabIndex = 0;
@@ -280,7 +280,7 @@ namespace UrPOS.WinForms.Forms
             // multiCartSpacer
             // 
             multiCartSpacer.Dock = DockStyle.Right;
-            multiCartSpacer.Location = new Point(604, 0);
+            multiCartSpacer.Location = new Point(548, 0);
             multiCartSpacer.Name = "multiCartSpacer";
             multiCartSpacer.Size = new Size(8, 44);
             multiCartSpacer.TabIndex = 1;
@@ -294,7 +294,7 @@ namespace UrPOS.WinForms.Forms
             btnNewInvoice.FlatStyle = FlatStyle.Flat;
             btnNewInvoice.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             btnNewInvoice.ForeColor = Color.White;
-            btnNewInvoice.Location = new Point(612, 0);
+            btnNewInvoice.Location = new Point(556, 0);
             btnNewInvoice.Name = "btnNewInvoice";
             btnNewInvoice.Size = new Size(160, 44);
             btnNewInvoice.TabIndex = 2;
@@ -314,7 +314,7 @@ namespace UrPOS.WinForms.Forms
             pnlRight.Name = "pnlRight";
             pnlRight.Padding = new Padding(16);
             pnlRight.RightToLeft = RightToLeft.Yes;
-            pnlRight.Size = new Size(468, 800);
+            pnlRight.Size = new Size(524, 800);
             pnlRight.TabIndex = 0;
             // 
             // tblNumpad
@@ -333,7 +333,7 @@ namespace UrPOS.WinForms.Forms
             tblNumpad.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
             tblNumpad.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
             tblNumpad.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
-            tblNumpad.Size = new Size(436, 430);
+            tblNumpad.Size = new Size(492, 430);
             tblNumpad.TabIndex = 0;
             // 
             // pnlTotals
@@ -349,7 +349,7 @@ namespace UrPOS.WinForms.Forms
             pnlTotals.Name = "pnlTotals";
             pnlTotals.Padding = new Padding(16, 14, 16, 14);
             pnlTotals.RightToLeft = RightToLeft.Yes;
-            pnlTotals.Size = new Size(436, 210);
+            pnlTotals.Size = new Size(492, 210);
             pnlTotals.TabIndex = 1;
             // 
             // btnCheckout
@@ -364,7 +364,7 @@ namespace UrPOS.WinForms.Forms
             btnCheckout.ForeColor = Color.White;
             btnCheckout.Location = new Point(16, 144);
             btnCheckout.Name = "btnCheckout";
-            btnCheckout.Size = new Size(404, 52);
+            btnCheckout.Size = new Size(460, 52);
             btnCheckout.TabIndex = 0;
             btnCheckout.Text = "إتمام البيع";
             btnCheckout.UseVisualStyleBackColor = false;
@@ -377,7 +377,7 @@ namespace UrPOS.WinForms.Forms
             lblItemsCount.ForeColor = Color.FromArgb(203, 213, 225);
             lblItemsCount.Location = new Point(16, 114);
             lblItemsCount.Name = "lblItemsCount";
-            lblItemsCount.Size = new Size(404, 28);
+            lblItemsCount.Size = new Size(460, 28);
             lblItemsCount.TabIndex = 1;
             lblItemsCount.Text = "عدد الأصناف: 0";
             lblItemsCount.TextAlign = ContentAlignment.MiddleCenter;
@@ -389,7 +389,7 @@ namespace UrPOS.WinForms.Forms
             lblCurrency.ForeColor = Color.FromArgb(148, 163, 184);
             lblCurrency.Location = new Point(16, 92);
             lblCurrency.Name = "lblCurrency";
-            lblCurrency.Size = new Size(404, 22);
+            lblCurrency.Size = new Size(460, 22);
             lblCurrency.TabIndex = 2;
             lblCurrency.Text = "د.ع";
             lblCurrency.TextAlign = ContentAlignment.MiddleCenter;
@@ -401,7 +401,7 @@ namespace UrPOS.WinForms.Forms
             lblNetAmount.ForeColor = Color.White;
             lblNetAmount.Location = new Point(16, 40);
             lblNetAmount.Name = "lblNetAmount";
-            lblNetAmount.Size = new Size(404, 52);
+            lblNetAmount.Size = new Size(460, 52);
             lblNetAmount.TabIndex = 3;
             lblNetAmount.Text = "0.00";
             lblNetAmount.TextAlign = ContentAlignment.MiddleCenter;
@@ -413,7 +413,7 @@ namespace UrPOS.WinForms.Forms
             lblNetCaption.ForeColor = Color.FromArgb(148, 163, 184);
             lblNetCaption.Location = new Point(16, 14);
             lblNetCaption.Name = "lblNetCaption";
-            lblNetCaption.Size = new Size(404, 26);
+            lblNetCaption.Size = new Size(460, 26);
             lblNetCaption.TabIndex = 4;
             lblNetCaption.Text = "صافي المبلغ";
             lblNetCaption.TextAlign = ContentAlignment.MiddleCenter;
@@ -427,7 +427,7 @@ namespace UrPOS.WinForms.Forms
             pnlSearch.Location = new Point(16, 16);
             pnlSearch.Name = "pnlSearch";
             pnlSearch.RightToLeft = RightToLeft.Yes;
-            pnlSearch.Size = new Size(436, 128);
+            pnlSearch.Size = new Size(492, 128);
             pnlSearch.TabIndex = 2;
             // 
             // qtyRow
@@ -438,7 +438,7 @@ namespace UrPOS.WinForms.Forms
             qtyRow.Location = new Point(0, 74);
             qtyRow.Name = "qtyRow";
             qtyRow.Padding = new Padding(0, 6, 0, 0);
-            qtyRow.Size = new Size(436, 46);
+            qtyRow.Size = new Size(492, 46);
             qtyRow.TabIndex = 0;
             // 
             // lblQtyCaption
@@ -448,7 +448,7 @@ namespace UrPOS.WinForms.Forms
             lblQtyCaption.ForeColor = Color.FromArgb(71, 85, 105);
             lblQtyCaption.Location = new Point(64, 6);
             lblQtyCaption.Name = "lblQtyCaption";
-            lblQtyCaption.Size = new Size(372, 40);
+            lblQtyCaption.Size = new Size(428, 40);
             lblQtyCaption.TabIndex = 0;
             lblQtyCaption.Text = "الكمية القادمة:";
             lblQtyCaption.TextAlign = ContentAlignment.MiddleLeft;
@@ -472,7 +472,7 @@ namespace UrPOS.WinForms.Forms
             searchRow.Dock = DockStyle.Top;
             searchRow.Location = new Point(0, 30);
             searchRow.Name = "searchRow";
-            searchRow.Size = new Size(436, 44);
+            searchRow.Size = new Size(492, 44);
             searchRow.TabIndex = 1;
             // 
             // txtBarcode
@@ -484,7 +484,7 @@ namespace UrPOS.WinForms.Forms
             txtBarcode.Name = "txtBarcode";
             txtBarcode.PlaceholderText = "امسح الباركود أو اكتب اسم المنتج ثم Enter";
             txtBarcode.RightToLeft = RightToLeft.Yes;
-            txtBarcode.Size = new Size(346, 39);
+            txtBarcode.Size = new Size(402, 39);
             txtBarcode.TabIndex = 0;
             txtBarcode.TextAlign = HorizontalAlignment.Right;
             txtBarcode.KeyDown += txtBarcode_KeyDown;
@@ -513,7 +513,7 @@ namespace UrPOS.WinForms.Forms
             lblSearchTitle.ForeColor = Color.FromArgb(15, 23, 42);
             lblSearchTitle.Location = new Point(0, 0);
             lblSearchTitle.Name = "lblSearchTitle";
-            lblSearchTitle.Size = new Size(436, 30);
+            lblSearchTitle.Size = new Size(492, 30);
             lblSearchTitle.TabIndex = 2;
             lblSearchTitle.Text = "بحث سريع (باركود / اسم)";
             lblSearchTitle.TextAlign = ContentAlignment.MiddleLeft;

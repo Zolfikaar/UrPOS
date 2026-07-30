@@ -39,6 +39,7 @@ namespace UrPOS.Presentation
                     services.AddTransient<IAuthService, AuthService>();
                     services.AddTransient<IProductService, ProductService>();
                     services.AddTransient<IInvoiceService, InvoiceService>();
+                    services.AddTransient<IBackupService, PostgresBackupService>();
 
                     // 5. تسجيل نماذج العرض (WinForms)
                     services.AddTransient<LoginForm>();
@@ -46,6 +47,7 @@ namespace UrPOS.Presentation
                     services.AddTransient<PosSalesForm>();
                     services.AddTransient<SetupForm>();
                     services.AddTransient<ProductsControl>();
+                    services.AddTransient<SettingsControl>();
                 });
         }
     }

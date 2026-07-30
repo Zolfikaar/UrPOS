@@ -115,14 +115,14 @@ namespace UrPOS.WinForms.Forms
 
         private void btnNavSettings_Click(object? sender, EventArgs e)
         {
-            _settingsControl ??= new SettingsControl();
+            _settingsControl ??= _serviceProvider.GetRequiredService<SettingsControl>();
             ShowInContentHost(_settingsControl);
             HighlightNav(btnNavSettings);
         }
 
         private void btnQuickBackup_Click(object? sender, EventArgs e)
         {
-            _settingsControl ??= new SettingsControl();
+            _settingsControl ??= _serviceProvider.GetRequiredService<SettingsControl>();
             _settingsControl.ShowBackupTab();
             ShowInContentHost(_settingsControl);
             HighlightNav(btnNavSettings);
