@@ -22,6 +22,7 @@ namespace UrPOS.WinForms.Controls
             public int Id { get; set; }
             public string Barcode { get; set; } = string.Empty;
             public string ProductName { get; set; } = string.Empty;
+            public string UnitOfMeasure { get; set; } = "قطعة";
             public decimal CostPrice { get; set; }
             public decimal SalePrice { get; set; }
             public int CurrentStock { get; set; }
@@ -36,6 +37,7 @@ namespace UrPOS.WinForms.Controls
                 Id = product.Id,
                 Barcode = product.Barcode,
                 ProductName = product.ProductName,
+                UnitOfMeasure = string.IsNullOrWhiteSpace(product.UnitOfMeasure) ? "قطعة" : product.UnitOfMeasure,
                 CostPrice = product.CostPrice,
                 SalePrice = product.SalePrice,
                 CurrentStock = product.CurrentStock,
@@ -48,6 +50,7 @@ namespace UrPOS.WinForms.Controls
                 Id = product.Id;
                 Barcode = product.Barcode;
                 ProductName = product.ProductName;
+                UnitOfMeasure = string.IsNullOrWhiteSpace(product.UnitOfMeasure) ? "قطعة" : product.UnitOfMeasure;
                 CostPrice = product.CostPrice;
                 SalePrice = product.SalePrice;
                 CurrentStock = product.CurrentStock;
@@ -59,6 +62,7 @@ namespace UrPOS.WinForms.Controls
                 Id = Id,
                 Barcode = Barcode,
                 ProductName = ProductName,
+                UnitOfMeasure = UnitOfMeasure,
                 CostPrice = CostPrice,
                 SalePrice = SalePrice,
                 CurrentStock = CurrentStock,
@@ -446,16 +450,24 @@ namespace UrPOS.WinForms.Controls
                 new DataGridViewTextBoxColumn
                 {
                     DataPropertyName = nameof(ProductListItem.ProductName),
-                    FillWeight = 22,
+                    FillWeight = 20,
                     HeaderText = "اسم المنتج",
                     MinimumWidth = 120,
                     Name = "colProductName"
                 },
                 new DataGridViewTextBoxColumn
                 {
+                    DataPropertyName = nameof(ProductListItem.UnitOfMeasure),
+                    FillWeight = 8,
+                    HeaderText = "الوحدة",
+                    MinimumWidth = 70,
+                    Name = "colUnit"
+                },
+                new DataGridViewTextBoxColumn
+                {
                     DataPropertyName = nameof(ProductListItem.CostPrice),
                     DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter, Format = "N2" },
-                    FillWeight = 12,
+                    FillWeight = 11,
                     HeaderText = "سعر الشراء",
                     MinimumWidth = 80,
                     Name = "colCostPrice"

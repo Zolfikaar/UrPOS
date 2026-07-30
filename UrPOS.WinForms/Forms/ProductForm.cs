@@ -39,6 +39,8 @@ namespace UrPOS.WinForms.Forms
         private Panel pnlStockReasonField = null!;
         private Label lblStockReason = null!;
         private ComboBox cboStockReason = null!;
+        private Panel pnlUnitField = null!;
+        private ComboBox cboUnitOfMeasure = null!;
 
         public bool IsEdit => _editingProductId.HasValue;
 
@@ -50,6 +52,7 @@ namespace UrPOS.WinForms.Forms
             _productRepository = productRepository ?? throw new ArgumentNullException(nameof(productRepository));
             _inventoryRepository = inventoryRepository ?? throw new ArgumentNullException(nameof(inventoryRepository));
             InitializeComponent();
+            BuildUnitOfMeasureControl();
             BuildStockAdjustmentControls();
 
             numInitialStock.Enabled = true;
@@ -57,6 +60,46 @@ namespace UrPOS.WinForms.Forms
             lblFormTitle.Text = "إضافة منتج جديد";
             Text = "UrPOS — إضافة منتج جديد";
             numMinStock.Value = 5;
+        }
+
+        private void BuildUnitOfMeasureControl()
+        {
+            var lbl = new Label
+            {
+                Dock = DockStyle.Top,
+                Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold, GraphicsUnit.Point),
+                ForeColor = Color.FromArgb(51, 65, 85),
+                Name = "lblUnitOfMeasure",
+                Size = new Size(400, 24),
+                Text = "وحدة القياس",
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            cboUnitOfMeasure = new ComboBox
+            {
+                Dock = DockStyle.Top,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point),
+                Name = "cboUnitOfMeasure",
+                RightToLeft = RightToLeft.Yes,
+                Size = new Size(400, 30)
+            };
+            cboUnitOfMeasure.Items.AddRange(ProductUnits.Common);
+            cboUnitOfMeasure.SelectedIndex = 0;
+
+            pnlUnitField = new Panel
+            {
+                Margin = new Padding(0, 0, 0, 4),
+                Name = "pnlUnitField",
+                RightToLeft = RightToLeft.Yes,
+                Size = new Size(400, 68)
+            };
+            pnlUnitField.Controls.Add(cboUnitOfMeasure);
+            pnlUnitField.Controls.Add(lbl);
+
+            var nameIndex = flowFields.Controls.GetChildIndex(pnlNameField);
+            flowFields.Controls.Add(pnlUnitField);
+            flowFields.Controls.SetChildIndex(pnlUnitField, nameIndex + 1);
         }
 
         public ProductForm(
@@ -138,6 +181,7 @@ namespace UrPOS.WinForms.Forms
             numSalePrice.Value = ClampDecimal(product.SalePrice, numSalePrice);
             numInitialStock.Value = ClampInt(product.CurrentStock, numInitialStock);
             numMinStock.Value = ClampInt(product.MinStockLevel, numMinStock);
+            SelectUnit(product.UnitOfMeasure);
             _originalStock = (int)numInitialStock.Value;
 
             lblInitialStock.Text = "الكمية بالمخزون";
@@ -194,9 +238,9 @@ namespace UrPOS.WinForms.Forms
             }
         }
 
-        private void btnGenerateBarcode_Click(object? sender, EventArgs e)
+        private async void btnGenerateBarcode_Click(object? sender, EventArgs e)
         {
-            txtBarcode.Text = GenerateBarcodeStub();
+            txtBarcode.Text = await GenerateUniqueBarcodeAsync();
             HideValidationError();
         }
 
@@ -253,15 +297,25 @@ namespace UrPOS.WinForms.Forms
                 }
             }
 
+            var barcode = txtBarcode.Text.Trim();
+            var colliding = await _productRepository.GetByBarcodeAsync(barcode);
+            if (colliding != null && colliding.Id != (_editingProductId ?? 0))
+            {
+                ShowSaveFailure($"الباركود ({barcode}) مُسجل مسبقاً لمنتج آخر: {colliding.ProductName}");
+                txtBarcode.Focus();
+                return;
+            }
+
             var product = new Product
             {
                 Id = _editingProductId ?? 0,
-                Barcode = txtBarcode.Text.Trim(),
+                Barcode = barcode,
                 ProductName = txtProductName.Text.Trim(),
                 CostPrice = numCostPrice.Value,
                 SalePrice = numSalePrice.Value,
                 CurrentStock = newStock,
-                MinStockLevel = (int)numMinStock.Value
+                MinStockLevel = (int)numMinStock.Value,
+                UnitOfMeasure = cboUnitOfMeasure.SelectedItem?.ToString() ?? "قطعة"
             };
 
             btnSave.Enabled = false;
@@ -403,10 +457,42 @@ namespace UrPOS.WinForms.Forms
             return true;
         }
 
-        private static string GenerateBarcodeStub()
+        private async Task<string> GenerateUniqueBarcodeAsync()
         {
-            var stamp = DateTime.Now.ToString("yyMMddHHmmss");
-            return $"628{stamp}";
+            for (var attempt = 0; attempt < 15; attempt++)
+            {
+                var stamp = DateTime.Now.ToString("yyMMddHHmmss");
+                var candidate = $"628{stamp}{Random.Shared.Next(0, 9)}";
+                var existing = await _productRepository.GetByBarcodeAsync(candidate);
+                if (existing is null || existing.Id == (_editingProductId ?? 0))
+                {
+                    return candidate;
+                }
+
+                await Task.Delay(20);
+            }
+
+            return $"628{Guid.NewGuid():N}"[..16];
+        }
+
+        private void SelectUnit(string? unit)
+        {
+            if (string.IsNullOrWhiteSpace(unit))
+            {
+                cboUnitOfMeasure.SelectedIndex = 0;
+                return;
+            }
+
+            var index = cboUnitOfMeasure.Items.IndexOf(unit);
+            if (index >= 0)
+            {
+                cboUnitOfMeasure.SelectedIndex = index;
+            }
+            else
+            {
+                cboUnitOfMeasure.Items.Add(unit);
+                cboUnitOfMeasure.SelectedItem = unit;
+            }
         }
 
         private static decimal ClampDecimal(decimal value, NumericUpDown control)

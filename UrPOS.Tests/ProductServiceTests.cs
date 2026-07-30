@@ -31,5 +31,26 @@ namespace UrPOS.Tests
             Assert.False(result.isSuccess);
             Assert.Contains("سعر البيع لا يمكن أن يكون أقل من سعر الكلفة", result.ErrorMessage);
         }
+
+        [Fact]
+        public async Task CreateProduct_ShouldFail_WhenBarcodeAlreadyExists()
+        {
+            var mockRepo = new Mock<IProductRepository>();
+            mockRepo.Setup(r => r.GetByBarcodeAsync("DUP-001"))
+                .ReturnsAsync(new Product { Id = 9, Barcode = "DUP-001", ProductName = "منتج قديم" });
+
+            var productService = new ProductService(mockRepo.Object);
+            var result = await productService.CreateProductAsync(new Product
+            {
+                Barcode = "DUP-001",
+                ProductName = "منتج جديد",
+                CostPrice = 100,
+                SalePrice = 150
+            });
+
+            Assert.False(result.isSuccess);
+            Assert.Contains("مُسجل مسبقاً", result.ErrorMessage);
+            mockRepo.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
+        }
     }
 }

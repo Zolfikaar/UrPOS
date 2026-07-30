@@ -27,6 +27,24 @@ namespace UrPOS.Core.Entities
         public bool AutoPrintInvoice { get; set; } = true;
         public string InvoiceFooterText {  get; set; } = "شكراً لزيارتكم!";
 
+        // === 4. وضع التجربة (Demo Mode) ===
+        public bool IsDemoModeEnabled { get; set; }
+        public int DemoTrialDays { get; set; } = 6;
+        public DateTime? DemoTrialStartedAtUtc { get; set; }
+
+        /// <summary>Remaining whole days in the demo trial (never negative).</summary>
+        public int GetDemoDaysRemaining()
+        {
+            if (!IsDemoModeEnabled)
+            {
+                return DemoTrialDays;
+            }
+
+            var started = DemoTrialStartedAtUtc ?? DateTime.UtcNow;
+            var elapsedDays = (int)Math.Floor((DateTime.UtcNow - started).TotalDays);
+            return Math.Max(0, DemoTrialDays - elapsedDays);
+        }
+
         // دالة مساعدة لتوليد نص الاتصال بـ PostgreSQL تلقائياً بناءً على الخصائص
         public string GetConnectionString()
         {

@@ -28,10 +28,9 @@ namespace UrPOS.Infrastructure.Data
             // 2. إنشاء الجداول والـ Indexes من سكريبت الـ Embedded SQL
             await ExecuteInitialSchemaScriptAsync();
 
-            // 3. زراعة حساب المدير الافتراضي (Admin) إذا لم يكن موجوداً
-            //await SeedDefaultAdminUserAsync();
-
+            // 3. زراعة الأدوار ثم حساب المدير الافتراضي (admin / admin123) إن لم يوجد
             await SeedRolesAsync();
+            await SeedDefaultAdminUserAsync();
 
             // 4. مسح سجلات الضيف اليتيمة المتبقية بعد تعطل غير متوقع
             await CleanupOrphanGuestUsersAsync();
@@ -149,10 +148,11 @@ namespace UrPOS.Infrastructure.Data
             {
                 // إضافة الأدوار الافتراضية
                 const string insertRolesSql = @"
-                    INSERT INTO roles (name) VALUES 
+                    INSERT INTO roles (role_name) VALUES 
                     ('Admin'),
                     ('Manager'),
-                    ('Cashier');";
+                    ('Cashier')
+                    ON CONFLICT DO NOTHING;";
                 await connection.ExecuteAsync(insertRolesSql);
             }
         }

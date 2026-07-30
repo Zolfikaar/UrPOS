@@ -47,6 +47,7 @@ namespace UrPOS.Presentation
                     services.AddTransient<PosSalesForm>();
                     services.AddTransient<SetupForm>();
                     services.AddTransient<ProductsControl>();
+                    services.AddTransient<InvoicesHistoryControl>();
                     services.AddTransient<SettingsControl>();
                 });
         }

@@ -1,20 +1,29 @@
 using System.Drawing;
 using System.Windows.Forms;
+using UrPOS.Core.Entities;
 using UrPOS.Core.Interfaces;
+using UrPOS.WinForms.Forms;
 
 namespace UrPOS.WinForms.Controls
 {
     /// <summary>
-    /// Settings page UI with Arabic RTL tabs, including encrypted database backup/restore.
+    /// Settings page UI with Arabic RTL tabs, including encrypted database backup/restore,
+    /// demo mode indicator, and OCR roadmap placeholder.
     /// </summary>
     public class SettingsControl : UserControl
     {
         private readonly TabControl _tabs;
         private readonly IBackupService _backupService;
+        private readonly IConfigurationService _configurationService;
+        private readonly AppConfigurations _configs;
+        private CheckBox? _chkDemoMode;
+        private Label? _lblDemoStatus;
 
-        public SettingsControl(IBackupService backupService)
+        public SettingsControl(IBackupService backupService, IConfigurationService configurationService)
         {
             _backupService = backupService;
+            _configurationService = configurationService;
+            _configs = configurationService.GetConfigurations();
 
             AutoScaleMode = AutoScaleMode.None;
             RightToLeft = RightToLeft.Yes;
@@ -29,7 +38,7 @@ namespace UrPOS.WinForms.Controls
                 ForeColor = Color.FromArgb(15, 23, 42),
                 Height = 44,
                 Text = "الإعدادات والأمان",
-                TextAlign = ContentAlignment.MiddleRight
+                TextAlign = ContentAlignment.MiddleLeft
             };
 
             var lblHint = new Label
@@ -38,8 +47,8 @@ namespace UrPOS.WinForms.Controls
                 Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(100, 116, 139),
                 Height = 28,
-                Text = "إدارة بيانات المتجر، النسخ الاحتياطي المشفر، وتفضيلات النظام.",
-                TextAlign = ContentAlignment.MiddleRight
+                Text = "إدارة بيانات المتجر، النسخ الاحتياطي المشفر، وضع التجربة، والخدمات المستقبلية.",
+                TextAlign = ContentAlignment.MiddleLeft
             };
 
             _tabs = new TabControl
@@ -54,6 +63,7 @@ namespace UrPOS.WinForms.Controls
             _tabs.TabPages.Add(BuildStoreProfileTab());
             _tabs.TabPages.Add(BuildBackupSecurityTab());
             _tabs.TabPages.Add(BuildSystemPrefsTab());
+            _tabs.TabPages.Add(BuildAddonsTab());
 
             Controls.Add(_tabs);
             Controls.Add(lblHint);
@@ -123,20 +133,122 @@ namespace UrPOS.WinForms.Controls
             return page;
         }
 
-        private static TabPage BuildSystemPrefsTab()
+        private TabPage BuildSystemPrefsTab()
         {
             var page = CreateTabPage("tabPrefs", "تفضيلات النظام");
             var flow = CreateFlowBody();
 
             flow.Controls.Add(CreatePlaceholderNote(
                 "الطابعة والتفضيلات العامة",
-                "إعدادات الطابعة الافتراضية والطباعة التلقائية للفواتير."));
+                "إعدادات الطابعة الافتراضية والطباعة التلقائية للفواتير، ووضع التجربة (Demo Mode)."));
             flow.Controls.Add(CreateLabeledField("اسم الطابعة الافتراضية", ""));
             flow.Controls.Add(CreateCheckRow("طباعة الفاتورة تلقائياً بعد البيع", true));
             flow.Controls.Add(CreateLabeledField("نوع الموديول", "General"));
 
+            _chkDemoMode = new CheckBox
+            {
+                Checked = _configs.IsDemoModeEnabled,
+                Font = new Font("Segoe UI Semibold", 10.5F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(15, 23, 42),
+                Height = 36,
+                Margin = new Padding(0, 12, 0, 4),
+                RightToLeft = RightToLeft.Yes,
+                Text = "تفعيل وضع التجربة (Demo Mode)",
+                TextAlign = ContentAlignment.MiddleLeft,
+                Width = 680
+            };
+            _chkDemoMode.CheckedChanged += (_, _) => SaveDemoModeSetting(_chkDemoMode.Checked);
+
+            _lblDemoStatus = new Label
+            {
+                AutoSize = false,
+                Font = new Font("Segoe UI", 10F),
+                ForeColor = Color.FromArgb(71, 85, 105),
+                Height = 48,
+                Margin = new Padding(0, 0, 0, 12),
+                RightToLeft = RightToLeft.Yes,
+                TextAlign = ContentAlignment.TopLeft,
+                Width = 680,
+                Text = BuildDemoStatusText()
+            };
+
+            var demoNote = CreatePlaceholderNote(
+                "حساب التجربة الافتراضي",
+                "بيانات الدخول التجريبية: المستخدم admin / كلمة المرور admin123. عند تفعيل وضع التجربة يظهر عدّاد الفترة التجريبية في ترويسة الشاشة الرئيسية.");
+
+            flow.Controls.Add(_chkDemoMode);
+            flow.Controls.Add(_lblDemoStatus);
+            flow.Controls.Add(demoNote);
+
             page.Controls.Add(flow);
             return page;
+        }
+
+        private TabPage BuildAddonsTab()
+        {
+            var page = CreateTabPage("tabAddons", "إضافات وخدمات مستقبلية");
+            var flow = CreateFlowBody();
+
+            flow.Controls.Add(CreatePlaceholderNote(
+                "قراءة قوائم التسوق/الشراء عبر الصور",
+                "ميزة OCR لمسح فواتير المشتريات والصور — إضافة مدفوعة / خدمة متكاملة مخططة للإصدارات القادمة. غير متاحة في الإصدار الحالي."));
+
+            var btnOcr = CreateActionButton("قراءة قوائم التسوق/الشراء عبر الصور (قريباً)", Color.FromArgb(100, 116, 139));
+            btnOcr.MinimumSize = new Size(360, 44);
+            btnOcr.Click += (_, _) =>
+            {
+                MessageBox.Show(
+                    FindForm(),
+                    "هذه الميزة ضمن خارطة الطريق كخدمة مدفوعة مدمجة.\nقراءة قوائم التسوق والصور عبر OCR غير مفعّلة في هذا الإصدار.",
+                    "إضافة مستقبلية",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information,
+                    MessageBoxDefaultButton.Button1,
+                    MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+            };
+
+            var deferred = CreatePlaceholderNote(
+                "ميزات مؤجّلة",
+                "• نظام استعادة كلمة المرور دون اتصال (المهمة السادسة) — مؤجّل.\n• تكامل الأجهزة الخارجية / الميزان — مؤجّل.");
+
+            flow.Controls.Add(btnOcr);
+            flow.Controls.Add(deferred);
+            page.Controls.Add(flow);
+            return page;
+        }
+
+        private void SaveDemoModeSetting(bool enabled)
+        {
+            _configs.IsDemoModeEnabled = enabled;
+            if (enabled && !_configs.DemoTrialStartedAtUtc.HasValue)
+            {
+                _configs.DemoTrialStartedAtUtc = DateTime.UtcNow;
+            }
+
+            UserSession.Instance.IsDemoMode = enabled || UserSession.Instance.IsGuest;
+            _configurationService.SaveConfigrations(_configs);
+
+            if (_lblDemoStatus is not null)
+            {
+                _lblDemoStatus.Text = BuildDemoStatusText();
+            }
+
+            if (FindForm() is MainForm main)
+            {
+                // Refresh header countdown / demo badge via public-friendly re-apply
+                main.RefreshSessionHeader();
+            }
+        }
+
+        private string BuildDemoStatusText()
+        {
+            if (!_configs.IsDemoModeEnabled)
+            {
+                return "وضع التجربة متوقف. حساب المدير الافتراضي (admin / admin123) يبقى متاحاً بصلاحيات كاملة.";
+            }
+
+            var days = _configs.GetDemoDaysRemaining();
+            return $"وضع التجربة مفعّل — المتبقي من الفترة التجريبية: {days} أيام. يظهر المؤشر في ترويسة الشاشة الرئيسية.";
         }
 
         private async Task CreateEncryptedBackupAsync()
@@ -396,7 +508,7 @@ namespace UrPOS.WinForms.Controls
             var panel = new Panel
             {
                 BackColor = Color.FromArgb(240, 253, 250),
-                Height = 88,
+                Height = 100,
                 Margin = new Padding(0, 0, 0, 12),
                 Padding = new Padding(16),
                 RightToLeft = RightToLeft.Yes,
@@ -410,7 +522,7 @@ namespace UrPOS.WinForms.Controls
                 ForeColor = Color.FromArgb(15, 23, 42),
                 Height = 28,
                 Text = title,
-                TextAlign = ContentAlignment.MiddleRight
+                TextAlign = ContentAlignment.MiddleLeft
             };
 
             var lblBody = new Label
@@ -419,7 +531,7 @@ namespace UrPOS.WinForms.Controls
                 Font = new Font("Segoe UI", 9.5F),
                 ForeColor = Color.FromArgb(71, 85, 105),
                 Text = body,
-                TextAlign = ContentAlignment.TopRight
+                TextAlign = ContentAlignment.TopLeft
             };
 
             panel.Controls.Add(lblBody);
@@ -444,7 +556,7 @@ namespace UrPOS.WinForms.Controls
                 ForeColor = Color.FromArgb(51, 65, 85),
                 Height = 24,
                 Text = label,
-                TextAlign = ContentAlignment.MiddleRight
+                TextAlign = ContentAlignment.MiddleLeft
             };
 
             var txt = new TextBox
@@ -474,7 +586,7 @@ namespace UrPOS.WinForms.Controls
                 Margin = new Padding(0, 4, 0, 12),
                 RightToLeft = RightToLeft.Yes,
                 Text = text,
-                TextAlign = ContentAlignment.MiddleRight,
+                TextAlign = ContentAlignment.MiddleLeft,
                 Width = 680
             };
         }

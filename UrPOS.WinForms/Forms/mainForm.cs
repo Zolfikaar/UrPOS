@@ -11,31 +11,59 @@ namespace UrPOS.WinForms.Forms
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IAuthService _authService;
+        private readonly AppConfigurations _configs;
         private bool _guestCleanupCompleted;
 
         private ProductsControl? _productsControl;
-        private EmptyStateControl? _invoicesEmpty;
+        private InvoicesHistoryControl? _invoicesHistory;
         private SettingsControl? _settingsControl;
 
-        public MainForm(IServiceProvider serviceProvider, IAuthService authService)
+        public MainForm(IServiceProvider serviceProvider, IAuthService authService, AppConfigurations configs)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _configs = configs ?? throw new ArgumentNullException(nameof(configs));
             InitializeComponent();
             ApplySessionInfo();
             HighlightNav(btnNavDashboard);
             FormClosing += MainForm_FormClosing;
         }
 
+        public void RefreshSessionHeader() => ApplySessionInfo();
+
         private void ApplySessionInfo()
         {
             var session = UserSession.Instance;
-            lblWelcome.Text = session.IsLoggedIn
-                ? $"مرحباً، {session.FullName}"
-                : "مرحباً";
-            lblRole.Text = session.IsLoggedIn
-                ? $"الدور: {session.RoleName}"
-                : string.Empty;
+            var demoActive = session.IsGuest || session.IsDemoMode || _configs.IsDemoModeEnabled;
+
+            if (session.IsLoggedIn && demoActive)
+            {
+                if (_configs.IsDemoModeEnabled && !_configs.DemoTrialStartedAtUtc.HasValue)
+                {
+                    _configs.DemoTrialStartedAtUtc = DateTime.UtcNow;
+                }
+
+                var displayName = session.IsGuest ? "زائر تجريبي" : session.FullName;
+                var role = string.IsNullOrWhiteSpace(session.RoleName) ? "Admin" : session.RoleName;
+                var days = _configs.GetDemoDaysRemaining();
+                lblWelcome.Text = $"مرحباً، {displayName} | الدور: {role} | الفترة التجريبية: {days} أيام";
+                lblRole.Text = "وضع التجربة مفعّل";
+                pnlUserInfo.Width = 520;
+            }
+            else if (session.IsLoggedIn)
+            {
+                lblWelcome.Text = $"مرحباً، {session.FullName}";
+                lblRole.Text = $"الدور: {session.RoleName}";
+                pnlUserInfo.Width = 280;
+            }
+            else
+            {
+                lblWelcome.Text = "مرحباً";
+                lblRole.Text = string.Empty;
+                pnlUserInfo.Width = 280;
+            }
+
+            session.IsDemoMode = demoActive;
         }
 
         private void ShowInContentHost(Control view)
@@ -104,13 +132,29 @@ namespace UrPOS.WinForms.Forms
             _productsControl ??= _serviceProvider.GetRequiredService<ProductsControl>();
         }
 
-        private void btnNavInvoices_Click(object? sender, EventArgs e)
+        private async void btnNavInvoices_Click(object? sender, EventArgs e)
         {
-            _invoicesEmpty ??= new EmptyStateControl(
-                "سجل الفواتير",
-                "هذه الصفحة قيد التجهيز / لا توجد بيانات للعرض حالياً.\r\nسيظهر هنا سجل فواتير المبيعات والمشتريات.");
-            ShowInContentHost(_invoicesEmpty);
+            EnsureInvoicesHistoryControl();
+            ShowInContentHost(_invoicesHistory!);
             HighlightNav(btnNavInvoices);
+            await _invoicesHistory!.ReloadAsync();
+        }
+
+        private void EnsureInvoicesHistoryControl()
+        {
+            if (_invoicesHistory is not null)
+            {
+                return;
+            }
+
+            _invoicesHistory = _serviceProvider.GetRequiredService<InvoicesHistoryControl>();
+            _invoicesHistory.ProductsMayHaveChanged += async (_, _) =>
+            {
+                if (_productsControl is not null)
+                {
+                    await _productsControl.ReloadProductsAsync();
+                }
+            };
         }
 
         private void btnNavSettings_Click(object? sender, EventArgs e)
@@ -118,6 +162,7 @@ namespace UrPOS.WinForms.Forms
             _settingsControl ??= _serviceProvider.GetRequiredService<SettingsControl>();
             ShowInContentHost(_settingsControl);
             HighlightNav(btnNavSettings);
+            ApplySessionInfo();
         }
 
         private void btnQuickBackup_Click(object? sender, EventArgs e)

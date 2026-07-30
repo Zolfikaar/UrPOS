@@ -41,9 +41,12 @@ CREATE TABLE IF NOT EXISTS products (
     sale_price NUMERIC(12, 3) NOT NULL DEFAULT 0.000,
     min_stock_level INT DEFAULT 0,
     current_stock INT DEFAULT 0,
+    unit_of_measure VARCHAR(50) NOT NULL DEFAULT 'قطعة',
     custom_attributes JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS unit_of_measure VARCHAR(50) NOT NULL DEFAULT 'قطعة';
 
 -- إنشار Index على الباركود واسم المنتج لسرعة الاستعلام الخارقة في شاشات الكاشير
 CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);

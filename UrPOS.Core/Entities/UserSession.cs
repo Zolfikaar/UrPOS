@@ -18,6 +18,11 @@ namespace UrPOS.Core.Entities
         /// </summary>
         public bool IsGuest { get; set; }
 
+        /// <summary>
+        /// وضع التجربة (ضيف أو تفعيل Demo Mode من الإعدادات).
+        /// </summary>
+        public bool IsDemoMode { get; set; }
+
         public bool IsLoggedIn => UserId.HasValue || IsGuest;
 
         // constructor مخفي لمنع الإنشاء العشوائي
@@ -42,6 +47,7 @@ namespace UrPOS.Core.Entities
             FullName = fullName;
             RoleName = string.IsNullOrWhiteSpace(roleName) ? "Cashier" : roleName;
             IsGuest = false;
+            IsDemoMode = false;
         }
 
         public void Clear()
@@ -51,6 +57,7 @@ namespace UrPOS.Core.Entities
             FullName = string.Empty;
             RoleName = string.Empty;
             IsGuest = false;
+            IsDemoMode = false;
         }
     }
 }

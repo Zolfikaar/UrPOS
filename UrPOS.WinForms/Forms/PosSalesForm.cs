@@ -21,6 +21,8 @@ namespace UrPOS.WinForms.Forms
         private string _qtyBuffer = "1";
         private bool _qtyBufferTouched;
         private bool _isBusy;
+        private Button? _btnManualItem;
+        private int? _pendingParkedResumeIndex;
 
         public PosSalesForm(IProductService productService, IInvoiceService invoiceService)
         {
@@ -28,12 +30,63 @@ namespace UrPOS.WinForms.Forms
             _invoiceService = invoiceService ?? throw new ArgumentNullException(nameof(invoiceService));
 
             InitializeComponent();
+            BuildManualEntryButton();
             BuildNumpad();
             BindCart();
             RefreshTotals();
             UpdateQtyDisplay();
             UpdateParkedButtonText();
             FormClosing += PosSalesForm_FormClosing;
+            Shown += PosSalesForm_ShownResumeParked;
+        }
+
+        /// <summary>
+        /// Queues a parked draft to be restored when the form is shown (used from invoice history).
+        /// </summary>
+        public void ResumeParkedDraft(int draftIndex)
+        {
+            _pendingParkedResumeIndex = draftIndex;
+        }
+
+        private void PosSalesForm_ShownResumeParked(object? sender, EventArgs e)
+        {
+            if (_pendingParkedResumeIndex is not int index)
+            {
+                return;
+            }
+
+            _pendingParkedResumeIndex = null;
+            RestoreParkedInvoice(index);
+        }
+
+        private void BuildManualEntryButton()
+        {
+            _btnManualItem = new Button
+            {
+                BackColor = Color.FromArgb(37, 99, 235),
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Right,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold),
+                ForeColor = Color.White,
+                Name = "btnManualItem",
+                Size = new Size(160, 44),
+                Text = "صنف يدوي",
+                UseVisualStyleBackColor = false
+            };
+            _btnManualItem.FlatAppearance.BorderSize = 0;
+            _btnManualItem.Click += (_, _) => ShowManualProductEntryDialog();
+
+            var spacer = new Panel
+            {
+                Dock = DockStyle.Right,
+                Width = 8,
+                Name = "manualBtnSpacer"
+            };
+
+            // Dock.Right: last added is outermost right in LTR; with RTL layout keep next to existing buttons
+            pnlMultiCart.Controls.Add(spacer);
+            pnlMultiCart.Controls.Add(_btnManualItem);
         }
 
         private void PosSalesForm_Load(object? sender, EventArgs e)
@@ -744,6 +797,11 @@ namespace UrPOS.WinForms.Forms
             btnRemoveItem.Enabled = !isBusy;
             btnClearCart.Enabled = !isBusy;
             tblNumpad.Enabled = !isBusy;
+            if (_btnManualItem is not null)
+            {
+                _btnManualItem.Enabled = !isBusy;
+            }
+
             UseWaitCursor = isBusy;
         }
 
@@ -764,5 +822,224 @@ namespace UrPOS.WinForms.Forms
             lblAlert.Visible = false;
             lblAlert.Text = string.Empty;
         }
+
+        private void ShowManualProductEntryDialog()
+        {
+            using var dialog = new Form
+            {
+                Text = "إضافة صنف يدوي (بدون باركود)",
+                RightToLeft = RightToLeft.Yes,
+                RightToLeftLayout = true,
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ClientSize = new Size(440, 320),
+                BackColor = Color.FromArgb(248, 250, 252),
+                Font = new Font("Segoe UI", 10F)
+            };
+
+            var flow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.TopDown,
+                Padding = new Padding(20),
+                RightToLeft = RightToLeft.Yes,
+                WrapContents = false
+            };
+
+            var txtName = CreateDialogTextBox("اسم الصنف");
+            var numPrice = new NumericUpDown
+            {
+                DecimalPlaces = 2,
+                Maximum = 999999999,
+                Minimum = 0,
+                Font = new Font("Segoe UI", 12F),
+                Size = new Size(380, 32),
+                Margin = new Padding(0, 0, 0, 12),
+                ThousandsSeparator = true
+            };
+            var numQty = new NumericUpDown
+            {
+                Maximum = 99999,
+                Minimum = 1,
+                Value = ParseQtyBuffer() > 0 ? ParseQtyBuffer() : 1,
+                Font = new Font("Segoe UI", 12F),
+                Size = new Size(380, 32),
+                Margin = new Padding(0, 0, 0, 12)
+            };
+            var cboUnit = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 11F),
+                Size = new Size(380, 32),
+                Margin = new Padding(0, 0, 0, 12),
+                RightToLeft = RightToLeft.Yes
+            };
+            cboUnit.Items.AddRange(ProductUnits.Common);
+            cboUnit.SelectedIndex = 0;
+
+            flow.Controls.Add(CreateDialogLabel("اسم الصنف / الوصف"));
+            flow.Controls.Add(txtName);
+            flow.Controls.Add(CreateDialogLabel("سعر الوحدة"));
+            flow.Controls.Add(numPrice);
+            flow.Controls.Add(CreateDialogLabel("الكمية"));
+            flow.Controls.Add(numQty);
+            flow.Controls.Add(CreateDialogLabel("وحدة القياس"));
+            flow.Controls.Add(cboUnit);
+
+            var buttons = new Panel { Dock = DockStyle.Bottom, Height = 56, Padding = new Padding(16, 8, 16, 8) };
+            var btnOk = new Button
+            {
+                BackColor = Color.FromArgb(13, 148, 136),
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = Color.White,
+                Dock = DockStyle.Right,
+                Width = 120,
+                Text = "إضافة للسلة",
+                DialogResult = DialogResult.None
+            };
+            btnOk.FlatAppearance.BorderSize = 0;
+
+            var btnCancel = new Button
+            {
+                BackColor = Color.FromArgb(100, 116, 139),
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = Color.White,
+                Dock = DockStyle.Right,
+                Width = 90,
+                Text = "إلغاء",
+                DialogResult = DialogResult.Cancel
+            };
+            btnCancel.FlatAppearance.BorderSize = 0;
+
+            buttons.Controls.Add(btnOk);
+            buttons.Controls.Add(new Panel { Dock = DockStyle.Right, Width = 8 });
+            buttons.Controls.Add(btnCancel);
+
+            btnOk.Click += async (_, _) =>
+            {
+                if (string.IsNullOrWhiteSpace(txtName.Text))
+                {
+                    MessageBox.Show(dialog, "اسم الصنف مطلوب.", "تحقق", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button1, MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                    return;
+                }
+
+                if (numPrice.Value <= 0)
+                {
+                    MessageBox.Show(dialog, "أدخل سعراً أكبر من صفر.", "تحقق", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button1, MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                    return;
+                }
+
+                btnOk.Enabled = false;
+                try
+                {
+                    var unit = cboUnit.SelectedItem?.ToString() ?? "قطعة";
+                    var name = txtName.Text.Trim();
+                    var qty = (int)numQty.Value;
+                    var price = numPrice.Value;
+                    var barcode = await GenerateUniqueManualBarcodeAsync();
+
+                    var createResult = await _productService.CreateProductAsync(new Product
+                    {
+                        Barcode = barcode,
+                        ProductName = name,
+                        CostPrice = price,
+                        SalePrice = price,
+                        CurrentStock = Math.Max(qty, 1),
+                        MinStockLevel = 0,
+                        UnitOfMeasure = unit
+                    });
+
+                    if (!createResult.isSuccess)
+                    {
+                        MessageBox.Show(dialog,
+                            string.IsNullOrWhiteSpace(createResult.ErrorMessage)
+                                ? "تعذر حفظ الصنف اليدوي."
+                                : createResult.ErrorMessage,
+                            "فشل",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error,
+                            MessageBoxDefaultButton.Button1,
+                            MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                        return;
+                    }
+
+                    var product = await _productService.GetByBarcodeAsync(barcode);
+                    if (product is null)
+                    {
+                        MessageBox.Show(dialog, "تم إنشاء الصنف لكن تعذر جلبه.", "فشل",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error,
+                            MessageBoxDefaultButton.Button1,
+                            MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                        return;
+                    }
+
+                    AddOrIncrementCartItem(product, qty);
+                    RefreshTotals();
+                    HideAlert();
+                    ShowAlert($"تمت إضافة الصنف اليدوي: {name} ({unit})", isError: false);
+                    dialog.DialogResult = DialogResult.OK;
+                    dialog.Close();
+                    txtBarcode.Focus();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(dialog, $"حدث خطأ: {ex.Message}", "خطأ",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error,
+                        MessageBoxDefaultButton.Button1,
+                        MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign);
+                }
+                finally
+                {
+                    btnOk.Enabled = true;
+                }
+            };
+
+            dialog.Controls.Add(flow);
+            dialog.Controls.Add(buttons);
+            dialog.AcceptButton = btnOk;
+            dialog.CancelButton = btnCancel;
+            dialog.ShowDialog(this);
+        }
+
+        private async Task<string> GenerateUniqueManualBarcodeAsync()
+        {
+            for (var attempt = 0; attempt < 12; attempt++)
+            {
+                var candidate = $"M{DateTime.Now:yyMMddHHmmss}{Random.Shared.Next(10, 99)}";
+                var existing = await _productService.GetByBarcodeAsync(candidate);
+                if (existing is null)
+                {
+                    return candidate;
+                }
+
+                await Task.Delay(15);
+            }
+
+            return $"M{Guid.NewGuid():N}"[..16];
+        }
+
+        private static Label CreateDialogLabel(string text) => new()
+        {
+            AutoSize = true,
+            Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(51, 65, 85),
+            Margin = new Padding(0, 4, 0, 2),
+            Text = text
+        };
+
+        private static TextBox CreateDialogTextBox(string placeholder) => new()
+        {
+            BorderStyle = BorderStyle.FixedSingle,
+            Font = new Font("Segoe UI", 12F),
+            Margin = new Padding(0, 0, 0, 12),
+            PlaceholderText = placeholder,
+            RightToLeft = RightToLeft.Yes,
+            Size = new Size(380, 32),
+            TextAlign = HorizontalAlignment.Right
+        };
     }
 }

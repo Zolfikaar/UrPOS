@@ -42,8 +42,8 @@ namespace UrPOS.Infrastructure.Repositories
         {
             using var connection = await _dbConnectionFactory.CreateConnectionAsync();
             const string sql = @"
-                INSERT INTO products (barcode, product_name, cost_price, sale_price, min_stock_level, current_stock, custom_attributes)
-                VALUES (@Barcode, @ProductName, @CostPrice, @SalePrice, @MinStockLevel, @CurrentStock, @CustomAttributes::jsonb)
+                INSERT INTO products (barcode, product_name, cost_price, sale_price, min_stock_level, current_stock, unit_of_measure, custom_attributes)
+                VALUES (@Barcode, @ProductName, @CostPrice, @SalePrice, @MinStockLevel, @CurrentStock, @UnitOfMeasure, @CustomAttributes::jsonb)
                 RETURNING id;";
 
             return await connection.ExecuteScalarAsync<int>(sql, product);
@@ -59,6 +59,7 @@ namespace UrPOS.Infrastructure.Repositories
                     cost_price = @CostPrice, 
                     sale_price = @SalePrice, 
                     min_stock_level = @MinStockLevel,
+                    unit_of_measure = @UnitOfMeasure,
                     custom_attributes = @CustomAttributes::jsonb
                 WHERE id = @Id;";
 

@@ -95,6 +95,57 @@ namespace UrPOS.Infrastructure.Repositories
             return invoice;
         }
 
+        public async Task<IEnumerable<SalesInvoiceListItem>> SearchSalesInvoicesAsync(
+            string? invoiceNumber,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+
+            var sql = @"
+                SELECT
+                    si.id AS Id,
+                    si.invoice_number AS InvoiceNumber,
+                    si.created_at AS CreatedAt,
+                    COALESCE(u.full_name, '—') AS CashierName,
+                    si.total_amount AS Subtotal,
+                    0::numeric AS Tax,
+                    si.discount AS Discount,
+                    si.net_amount AS FinalAmount,
+                    'Completed' AS Status,
+                    si.payment_type AS PaymentType,
+                    -1 AS ParkedDraftIndex
+                FROM sales_invoices si
+                LEFT JOIN users u ON u.id = si.user_id
+                WHERE 1 = 1";
+
+            if (!string.IsNullOrWhiteSpace(invoiceNumber))
+            {
+                sql += " AND si.invoice_number ILIKE @InvoiceNumber";
+            }
+
+            if (fromDate.HasValue)
+            {
+                sql += " AND si.created_at >= @FromDate";
+            }
+
+            if (toDate.HasValue)
+            {
+                sql += " AND si.created_at < @ToDateExclusive";
+            }
+
+            sql += " ORDER BY si.created_at DESC, si.id DESC;";
+
+            var toExclusive = toDate?.Date.AddDays(1);
+
+            return await connection.QueryAsync<SalesInvoiceListItem>(sql, new
+            {
+                InvoiceNumber = string.IsNullOrWhiteSpace(invoiceNumber) ? null : $"%{invoiceNumber.Trim()}%",
+                FromDate = fromDate?.Date,
+                ToDateExclusive = toExclusive
+            });
+        }
+
 
         // =================================================================
         // 2. موديول المشتريات - المندوبين (Purchase Module)

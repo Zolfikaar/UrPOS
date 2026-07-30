@@ -54,9 +54,10 @@ namespace UrPOS.Infrastructure.Services
             UserSession.Instance.Start(
                 guest.Id,
                 guest.Username,
-                guest.FullName,
-                guest.RoleName ?? "Cashier");
+                "زائر تجريبي",
+                "Admin");
             UserSession.Instance.IsGuest = true;
+            UserSession.Instance.IsDemoMode = true;
 
             return true;
         }
